@@ -1,0 +1,7 @@
+{
+  "_comment": "Booking policies agreed with Facilities. Changes need a FAC ticket.",
+  "slotMinutes": 15,
+  "maxBookingMinutes": 600,
+  "maxSeriesDays": 366,
+  "minGapMinutes": 0
+}

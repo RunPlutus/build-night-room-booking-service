@@ -1,0 +1,1 @@
+{ "auth": { "enabled": true }, "features": { "calendarSync": true, "emailReminders": true, "admin": true } }

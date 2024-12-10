@@ -1,0 +1,11 @@
+{
+  "room.free": "Libre",
+  "room.busy": "Occupé jusqu'à {time}",
+  "booking.created": "{room} réservée pour {time}",
+  "booking.conflict": "{room} est déjà réservée",
+  "booking.cancelled": "Réservation annulée",
+  "booking.recurring": "Se répète {freq}",
+  "error.generic": "Une erreur s'est produite.",
+  "kiosk.checkin": "S'enregistrer",
+  "kiosk.release": "Libérer la salle"
+}

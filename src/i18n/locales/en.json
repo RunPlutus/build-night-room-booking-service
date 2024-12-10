@@ -1,0 +1,11 @@
+{
+  "room.free": "Free",
+  "room.busy": "Busy until {time}",
+  "booking.created": "Booked {room} for {time}",
+  "booking.conflict": "{room} is already booked then",
+  "booking.cancelled": "Booking cancelled",
+  "booking.recurring": "Repeats {freq}",
+  "error.generic": "Something went wrong. Try again.",
+  "kiosk.checkin": "Check in",
+  "kiosk.release": "Release room"
+}

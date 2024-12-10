@@ -1,0 +1,7 @@
+{
+  "_comment": "Base config. Env overrides in <NODE_ENV>.json.",
+  "port": 8080,
+  "availabilityCacheTtlSeconds": 600,
+  "features": { "calendarSync": false, "emailReminders": false, "admin": false, "v1Routes": false, "userHeaderWarning": true },
+  "auth": { "enabled": false, "headerName": "x-api-key" }
+}

@@ -1,0 +1,212 @@
+{
+  "_comment": "Room inventory. Renames keep the old record as status=retired with replacedBy (see ADR-0004).",
+  "rooms": [
+    {
+      "id": "rm-fuji",
+      "name": "Fuji",
+      "floor": 2,
+      "capacity": 8,
+      "features": [
+        "display",
+        "whiteboard"
+      ],
+      "status": "active",
+      "createdAt": "2023-01-09T00:00:00.000Z"
+    },
+    {
+      "id": "rm-kilimanjaro",
+      "name": "Kilimanjaro",
+      "floor": 2,
+      "capacity": 10,
+      "features": [
+        "display",
+        "vc"
+      ],
+      "status": "active",
+      "createdAt": "2023-01-09T00:00:00.000Z"
+    },
+    {
+      "id": "rm-logan",
+      "name": "Logan",
+      "floor": 2,
+      "capacity": 12,
+      "features": [
+        "display",
+        "vc"
+      ],
+      "status": "active",
+      "createdAt": "2023-01-09T00:00:00.000Z"
+    },
+    {
+      "id": "rm-whitney",
+      "name": "Whitney",
+      "floor": 2,
+      "capacity": 4,
+      "features": [
+        "display"
+      ],
+      "status": "active",
+      "createdAt": "2023-06-12T00:00:00.000Z"
+    },
+    {
+      "id": "rm-rainier",
+      "name": "Rainier",
+      "floor": 3,
+      "capacity": 6,
+      "features": [
+        "display",
+        "vc"
+      ],
+      "status": "active",
+      "createdAt": "2023-01-09T00:00:00.000Z"
+    },
+    {
+      "id": "rm-denali",
+      "name": "Denali",
+      "floor": 3,
+      "capacity": 4,
+      "features": [
+        "whiteboard"
+      ],
+      "status": "active",
+      "createdAt": "2023-01-09T00:00:00.000Z"
+    },
+    {
+      "id": "rm-matterhorn",
+      "name": "Matterhorn",
+      "floor": 3,
+      "capacity": 10,
+      "features": [
+        "display",
+        "vc",
+        "whiteboard"
+      ],
+      "status": "active",
+      "createdAt": "2024-02-05T00:00:00.000Z"
+    },
+    {
+      "id": "rm-shasta",
+      "name": "Shasta",
+      "floor": 3,
+      "capacity": 8,
+      "features": [
+        "display"
+      ],
+      "status": "active",
+      "createdAt": "2024-02-05T00:00:00.000Z"
+    },
+    {
+      "id": "rm-4b",
+      "name": "4B",
+      "floor": 4,
+      "capacity": 12,
+      "features": [
+        "display",
+        "vc",
+        "whiteboard"
+      ],
+      "status": "active",
+      "createdAt": "2023-01-09T00:00:00.000Z"
+    },
+    {
+      "id": "rm-aconcagua",
+      "name": "Aconcagua",
+      "floor": 4,
+      "capacity": 8,
+      "features": [
+        "display"
+      ],
+      "status": "active",
+      "createdAt": "2023-01-09T00:00:00.000Z"
+    },
+    {
+      "id": "rm-elbrus",
+      "name": "Elbrus",
+      "floor": 4,
+      "capacity": 4,
+      "features": [],
+      "status": "active",
+      "createdAt": "2023-01-09T00:00:00.000Z"
+    },
+    {
+      "id": "rm-atlas",
+      "name": "Atlas",
+      "floor": 5,
+      "capacity": 16,
+      "features": [
+        "display",
+        "vc"
+      ],
+      "status": "active",
+      "createdAt": "2023-01-09T00:00:00.000Z"
+    },
+    {
+      "id": "rm-k2",
+      "name": "K2",
+      "floor": 5,
+      "capacity": 10,
+      "features": [
+        "display",
+        "vc"
+      ],
+      "status": "active",
+      "createdAt": "2023-01-09T00:00:00.000Z"
+    },
+    {
+      "id": "rm-vinson",
+      "name": "Vinson",
+      "floor": 5,
+      "capacity": 6,
+      "features": [
+        "whiteboard"
+      ],
+      "status": "active",
+      "createdAt": "2024-08-19T00:00:00.000Z"
+    },
+    {
+      "id": "rm-summit",
+      "name": "Summit",
+      "floor": 6,
+      "capacity": 30,
+      "features": [
+        "display",
+        "vc",
+        "stage"
+      ],
+      "status": "active",
+      "createdAt": "2023-01-09T00:00:00.000Z"
+    },
+    {
+      "id": "rm-kosciuszko",
+      "name": "Kosciuszko",
+      "floor": 6,
+      "capacity": 4,
+      "features": [],
+      "status": "active",
+      "createdAt": "2023-01-09T00:00:00.000Z"
+    },
+    {
+      "id": "rm-hood",
+      "name": "Hood",
+      "floor": 6,
+      "capacity": 6,
+      "features": [
+        "display"
+      ],
+      "status": "active",
+      "createdAt": "2024-08-19T00:00:00.000Z"
+    },
+    {
+      "id": "rm-baker",
+      "name": "Baker",
+      "floor": 6,
+      "capacity": 8,
+      "features": [
+        "display",
+        "vc"
+      ],
+      "status": "active",
+      "createdAt": "2024-08-19T00:00:00.000Z"
+    }
+  ]
+}
