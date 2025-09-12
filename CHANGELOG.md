@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.0
+- Atlas -> Olympus rename, using replacedBy (FAC-61)
+- Google calendar sync (read-only mirror, behind feature flag)
+
 ## 1.1.0
 - Recurring bookings (DAILY / WEEKLY)
 - iCal export

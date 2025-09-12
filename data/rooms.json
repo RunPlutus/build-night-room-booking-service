@@ -137,8 +137,21 @@
         "display",
         "vc"
       ],
+      "status": "retired",
+      "createdAt": "2023-01-09T00:00:00.000Z",
+      "replacedBy": "rm-olympus"
+    },
+    {
+      "id": "rm-olympus",
+      "name": "Olympus",
+      "floor": 5,
+      "capacity": 16,
+      "features": [
+        "display",
+        "vc"
+      ],
       "status": "active",
-      "createdAt": "2023-01-09T00:00:00.000Z"
+      "createdAt": "2025-09-15T00:00:00.000Z"
     },
     {
       "id": "rm-k2",

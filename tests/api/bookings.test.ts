@@ -56,7 +56,17 @@ describe('POST /api/bookings', () => {
     expect(res.status).toBe(409);
   });
 
+  it('treats a renamed room as the same physical room (Atlas -> Olympus)', async () => {
+    const res = await book(app, booking('rm-olympus', '2026-09-10T14:30', '2026-09-10T15:00'));
+    expect(res.status).toBe(409);
+    expect(res.body.error.details[0].title).toBe('Design review');
+  });
 
+  it('refuses bookings in a retired room', async () => {
+    const res = await book(app, booking('rm-atlas', '2026-11-03T10:00', '2026-11-03T11:00'));
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('ROOM_RETIRED');
+  });
 
   it('404s an unknown room', async () => {
     const res = await book(app, booking('rm-narnia', '2026-11-03T10:00', '2026-11-03T11:00'));

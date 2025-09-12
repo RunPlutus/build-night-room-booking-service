@@ -8,7 +8,17 @@ beforeEach(() => {
 });
 
 describe('rooms', () => {
+  it('lists active rooms', async () => {
+    const res = await request(app).get('/api/rooms');
+    const ids = res.body.rooms.map((r: any) => r.id);
+    expect(ids).toContain('rm-fuji');
+    expect(ids).not.toContain('rm-atlas');
+  });
 
+  it('can include retired rooms', async () => {
+    const res = await request(app).get('/api/rooms').query({ includeRetired: 'true' });
+    expect(res.body.rooms.map((r: any) => r.id)).toContain('rm-atlas');
+  });
 
   it('gets one room', async () => {
     const res = await request(app).get('/api/rooms/rm-summit');
@@ -36,6 +46,10 @@ describe('availability', () => {
     expect(res.body.busy.map((b: any) => b.title)).toContain('Platform standup');
   });
 
+  it('shows bookings made under a renamed room id', async () => {
+    const res = await availability(app, 'rm-olympus', '2026-09-03');
+    expect(res.body.busy.map((b: any) => b.title)).toContain('Design review');
+  });
 
   it('validates the date', async () => {
     await availability(app, 'rm-fuji', 'tomorrow').expect(400);
