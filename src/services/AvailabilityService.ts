@@ -19,6 +19,12 @@ export class AvailabilityService {
     const room = await this.rooms.get(roomId);
     if (!room) throw new NotFoundError(`Room ${roomId}`);
     const canonical = await this.rooms.canonicalId(roomId);
+    const hit = this.cache.get(canonical, date);
+    if (hit) {
+      metrics.increment('availability_cache_hit');
+      return { ...hit, roomId };
+    }
+    metrics.increment('availability_cache_miss');
 
     const dayStart = parseDate(date);
     const day = { start: dayStart, end: dayStart + MINUTES_PER_DAY };
@@ -36,6 +42,7 @@ export class AvailabilityService {
       date,
       busy: sortSpans(busy).map((s) => ({ bookingId: s.bookingId, title: s.title, start: formatLocal(s.start), end: formatLocal(s.end) })),
     };
+    this.cache.set(value);
     return { ...value, roomId };
   }
 

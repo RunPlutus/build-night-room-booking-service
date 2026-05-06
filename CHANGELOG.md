@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.4.0
+- Availability cache per room/day, 10 min TTL, invalidated on new bookings (PERF-19). Calendar p95 380ms -> 22ms
+
 ## 1.3.0
 - Recurrence expansion capped per series (PERF-12). Conflict-check p95 210ms -> 35ms
 

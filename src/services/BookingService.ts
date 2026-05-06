@@ -43,6 +43,7 @@ export class BookingService {
       createdAt: this.now().toISOString(),
     };
     await this.bookings.insert(record);
+    this.cache.invalidateRoom(await this.rooms.canonicalId(room.id));
     metrics.increment('booking_created');
     events.track('booking_created', { roomId: room.id, recurring: !!record.recurrence });
     return record;
