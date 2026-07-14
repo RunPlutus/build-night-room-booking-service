@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.5.0
+- Rename 4B -> Everest for new wayfinding signs (FAC-88)
+- Moved CI to GitHub Actions; `validate:data` step dropped for now
+
 ## 1.4.0
 - Availability cache per room/day, 10 min TTL, invalidated on new bookings (PERF-19). Calendar p95 380ms -> 22ms
 

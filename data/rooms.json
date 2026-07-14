@@ -109,6 +109,19 @@
       "createdAt": "2023-01-09T00:00:00.000Z"
     },
     {
+      "id": "rm-everest",
+      "name": "Everest",
+      "floor": 4,
+      "capacity": 12,
+      "features": [
+        "display",
+        "vc",
+        "whiteboard"
+      ],
+      "status": "active",
+      "createdAt": "2026-07-14T00:00:00.000Z"
+    },
+    {
       "id": "rm-aconcagua",
       "name": "Aconcagua",
       "floor": 4,
