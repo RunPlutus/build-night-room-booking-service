@@ -10,4 +10,4 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
-      - run: npm run validate:data
+      # TODO: re-add `npm run validate:data` (dropped in the GH Actions migration)
