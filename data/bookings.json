@@ -44,6 +44,17 @@
       "createdAt": "2025-08-28T10:00:00.000Z"
     },
     {
+      "id": "bk_sales_sync",
+      "roomId": "rm-everest",
+      "title": "Sales sync",
+      "organizer": "j.ortiz@example.com",
+      "start": "2026-10-05T10:00",
+      "end": "2026-10-05T11:00",
+      "recurrence": null,
+      "status": "confirmed",
+      "createdAt": "2026-10-01T09:44:02.000Z"
+    },
+    {
       "id": "bk_offsite",
       "roomId": "rm-fuji",
       "title": "Offsite planning",

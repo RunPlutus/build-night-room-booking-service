@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.6.1
+- Fix: malformed JSON bodies return 400 instead of 500
+- Chore: express 4.21.2
+
+## 1.6.0
+- Seed data refresh for Q4
+- X-User-Email audit header (warning when missing)
+
 ## 1.5.0
 - Rename 4B -> Everest for new wayfinding signs (FAC-88)
 - Moved CI to GitHub Actions; `validate:data` step dropped for now

@@ -55,6 +55,7 @@ routes -> controllers
 - `src/db/Database.ts` is the embedded store used in dev and tests (Cloud SQL in prod). Async, with realistic latency, and `transaction()` for serializable work.
 - `src/scheduling/*` holds time parsing, overlap and recurrence expansion.
 - Rooms and seed bookings live in `data/rooms.json` and `data/bookings.json`.
+- The 4B -> Everest rename (FAC-88) is complete; its bookings were migrated in FAC-91.
 
 ## Repo layout
 
