@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Room bookings · demo</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="bar">
+    <div class="bar__title">
+      <h1>Room bookings</h1>
+      <span class="bar__repo" id="repo"></span>
+    </div>
+    <div class="bar__controls">
+      <button type="button" id="prev" aria-label="Previous day">‹</button>
+      <input type="date" id="date" aria-label="Day" />
+      <button type="button" id="next" aria-label="Next day">›</button>
+      <span class="sep"></span>
+      <label class="seg" title="Which replica the calendar reads from and new bookings go to">
+        Server
+        <select id="replica"><option value="a">A</option><option value="b">B</option></select>
+      </label>
+      <button type="button" id="reset" class="ghost" title="Reload seed data and restart both servers">Reset data</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <aside class="panel" aria-labelledby="scen-h">
+      <h2 id="scen-h">Replay a complaint</h2>
+      <p class="hint">Each replay starts from fresh seed data, runs the steps against the API, and jumps the calendar to that day.</p>
+      <ol class="scenarios" id="scenarios"></ol>
+      <section class="result" id="result" aria-live="polite" hidden></section>
+    </aside>
+
+    <section class="cal" aria-label="Day calendar">
+      <div class="cal__head">
+        <div class="cal__corner" id="dayLabel"></div>
+        <div class="cal__hours" id="hours"></div>
+      </div>
+      <div id="rows"></div>
+      <p class="hint cal__foot">Click an empty spot to book. Click a booking to see it or cancel it. Striped red = two bookings in the same room at the same time.</p>
+    </section>
+  </main>
+
+  <dialog id="bookDlg">
+    <form method="dialog" id="bookForm">
+      <h3 id="bookTitle">New booking</h3>
+      <label>Title <input name="title" required maxlength="120" value="Demo meeting" /></label>
+      <div class="two">
+        <label>Start <input name="start" type="time" step="900" required /></label>
+        <label>End <input name="end" type="time" step="900" required /></label>
+      </div>
+      <label class="inline"><input name="weekly" type="checkbox" /> Repeat weekly for <input name="count" type="number" min="2" max="52" value="10" class="narrow" /> weeks</label>
+      <p class="hint" id="bookVia"></p>
+      <div class="actions">
+        <button value="cancel" formnovalidate class="ghost">Close</button>
+        <button value="ok" class="primary">Book</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="infoDlg">
+    <form method="dialog">
+      <h3 id="infoTitle"></h3>
+      <p id="infoBody"></p>
+      <div class="actions">
+        <button value="close" class="ghost">Close</button>
+        <button value="cancelBooking" class="danger">Cancel booking</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div class="toasts" id="toasts" aria-live="polite"></div>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

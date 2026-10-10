@@ -18,7 +18,12 @@ nvm use          # Node 20+
 npm install
 npm test         # ~65 tests, all green
 npm run dev      # http://localhost:8080
+npm run demo     # calendar UI on http://localhost:4000 (two replicas, one database)
 ```
+
+### Demo calendar
+
+`npm run demo` serves a day-view calendar backed by **two app instances sharing one database**, the way production runs. Pick which server the calendar talks to, click an empty slot to book, click a booking to cancel. The **Replay a complaint** panel re-runs Facilities' reported incidents against a fresh copy of the seed data and shows what happened. Code changes need a restart of `npm run demo`; data changes are picked up by **Reset data**.
 
 ## API
 
@@ -67,7 +72,7 @@ routes -> controllers
 | `src/integrations` | Google / Outlook calendar sync (off) |
 | `src/notifications`, `src/export`, `src/analytics`, `src/admin` | Reminders, iCal, analytics, admin console |
 | `scripts/` | Data validation, migrations, exports |
-| `web/` | Calendar UI (separate package) |
+| `public/`, `scripts/demo-server.ts` | Demo calendar (`npm run demo`) |
 | `docs/adr` | Architecture decisions |
 
 ## Ground rules

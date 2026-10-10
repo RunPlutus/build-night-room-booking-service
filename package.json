@@ -6,14 +6,19 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "start": "tsx src/server.ts",
+    "demo": "tsx scripts/demo-server.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "validate:data": "tsx scripts/validate-data.ts",
     "export:ical": "tsx scripts/export-ical.ts"
   },
-  "engines": { "node": ">=20" },
-  "dependencies": { "express": "4.21.2" },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "express": "4.21.2"
+  },
   "devDependencies": {
     "@types/express": "4.17.21",
     "@types/node": "20.17.10",

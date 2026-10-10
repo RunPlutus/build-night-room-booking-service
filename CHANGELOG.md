@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.6.2
+- Built-in demo calendar with complaint replays (`npm run demo`)
+- Removed the unused React prototype in web/
+
 ## 1.6.1
 - Fix: malformed JSON bodies return 400 instead of 500
 - Chore: express 4.21.2
