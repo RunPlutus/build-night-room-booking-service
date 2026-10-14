@@ -1,17 +1,17 @@
 Status
-Incomplete.
+Complete for Ticket 1. Facilitator-authorized rehearsal completion by Codex after the candidate experiment ended; this is not an independent candidate result.
 
 Completed changes
 - Booking creation runs the conflict check and the insert in one serializable database transaction, so simultaneous requests for the same slot through different replicas confirm exactly one booking (Rainier).
 - Availability ignores cancelled bookings, and each replica's availability cache entry is reused only while a fingerprint of the room's stored bookings is unchanged, so creates and cancellations made on any replica appear on every replica while repeated unchanged reads still hit the cache (Kilimanjaro).
 - Room identity data: 4B is marked retired with replacedBy rm-everest (ADR-0004). The all-hands booking keeps its original room id and now counts as occupying Everest.
-- Added tests/api/replicas-and-renames.test.ts (9 tests). 6 of them fail without these changes; the other 3 cover nearby cases that must keep working.
+- Corrected half-open interval boundaries and expanded recurrence through the supported 366-day span. Added eight scheduling regression cases; six failed before the fixes. Retained the nine replica and rename tests from Claude's submission.
 
 Verification
 - npm run typecheck: exit 0
-- npm test: exit 0; 75 passed, 0 failed, 0 skipped
-- npm run replay: exit 1; 14 passed, 10 failed, 0 skipped (24 checks)
+- npm test: exit 0; 83 passed, 0 failed, 0 skipped
+- npm run replay: exit 0; 24 passed, 0 failed, 0 skipped (24 checks)
 - npm run validate:data: exit 0; 0 errors, 0 warnings
 
 Remaining
-Some ticket requirements still fail. The implementation is incomplete.
+None for Ticket 1. The midpoint ticket has not been released yet.

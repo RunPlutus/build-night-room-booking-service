@@ -20,11 +20,10 @@ export interface Schedulable {
 }
 
 /**
- * Upper bound on occurrences generated per series. Expanding long series on
- * every conflict check was the main cost in PERF-12; meetings further out than
- * this are rare and get caught when they're edited.
+ * A daily series spanning the permitted 366 days includes its first day,
+ * so the shared engine must support 367 occurrences.
  */
-export const MAX_OCCURRENCES = 8;
+export const MAX_OCCURRENCES = 367;
 
 export function stepMinutes(r: Recurrence): Minutes {
   return (r.freq === 'WEEKLY' ? MINUTES_PER_WEEK : MINUTES_PER_DAY) * (r.interval ?? 1);
