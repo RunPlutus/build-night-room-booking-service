@@ -29,6 +29,22 @@ export class RoomRepository {
     const canonical = resolveCanonical(id, byId);
     return rooms.filter((r) => resolveCanonical(r.id, byId) === canonical).map((r) => r.id);
   }
+
+  /** Same room, its whole room, or its parts; independent sibling parts do not overlap. */
+  async occupyingRoomIds(id: string, q: Queryable = this.db): Promise<string[]> {
+    const rooms = await q.query((t) => [...t.rooms.values()]);
+    const byId = new Map(rooms.map((room) => [room.id, room]));
+    const canonical = resolveCanonical(id, byId);
+    const parentOf = (roomId: string): string | undefined => {
+      const parent = byId.get(roomId)?.parentId;
+      return parent ? resolveCanonical(parent, byId) : undefined;
+    };
+    const parent = parentOf(canonical);
+    return rooms.filter((room) => {
+      const other = resolveCanonical(room.id, byId);
+      return other === canonical || other === parent || parentOf(other) === canonical;
+    }).map((room) => room.id);
+  }
 }
 
 export function resolveCanonical(id: string, byId: Map<string, RoomRecord>): string {

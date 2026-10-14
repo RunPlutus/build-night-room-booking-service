@@ -1,17 +1,17 @@
 Status
-Complete for Ticket 1. Facilitator-authorized rehearsal completion by Codex after the candidate experiment ended; this is not an independent candidate result.
+Complete for Tickets 1 and 2. Facilitator-authorized rehearsal completion by Codex after the candidate experiment ended; this is not an independent candidate result.
 
 Completed changes
-- Booking creation runs the conflict check and the insert in one serializable database transaction, so simultaneous requests for the same slot through different replicas confirm exactly one booking (Rainier).
-- Availability ignores cancelled bookings, and each replica's availability cache entry is reused only while a fingerprint of the room's stored bookings is unchanged, so creates and cancellations made on any replica appear on every replica while repeated unchanged reads still hit the cache (Kilimanjaro).
+- Booking creation checks and inserts in one serializable transaction across replicas. Availability ignores cancelled bookings and reuses cached entries only while the stored-booking fingerprint is unchanged, so completed creates and cancellations appear on every replica.
 - Room identity data: 4B is marked retired with replacedBy rm-everest (ADR-0004). The all-hands booking keeps its original room id and now counts as occupying Everest.
 - Corrected half-open interval boundaries and expanded recurrence through the supported 366-day span. Added eight scheduling regression cases; six failed before the fixes. Retained the nine replica and rename tests from Claude's submission.
+- Merged the official divider release and added parent/part occupancy to conflicts and availability. Whole-room bookings block both halves; either half blocks the whole while siblings remain independent. Added fourteen regression cases covering races, recurrence, renames and three-replica calendar freshness; twelve failed before the change.
 
 Verification
 - npm run typecheck: exit 0
-- npm test: exit 0; 83 passed, 0 failed, 0 skipped
-- npm run replay: exit 0; 24 passed, 0 failed, 0 skipped (24 checks)
+- npm test: exit 0; 97 passed, 0 failed, 0 skipped
+- npm run replay: exit 0; 30 passed, 0 failed, 0 skipped (30 checks)
 - npm run validate:data: exit 0; 0 errors, 0 warnings
 
 Remaining
-None for Ticket 1. The midpoint ticket has not been released yet.
+None.

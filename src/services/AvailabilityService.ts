@@ -19,7 +19,7 @@ export class AvailabilityService {
     const room = await this.rooms.get(roomId);
     if (!room) throw new NotFoundError(`Room ${roomId}`);
     const canonical = await this.rooms.canonicalId(roomId);
-    const ids = await this.rooms.physicalRoomIds(canonical);
+    const ids = await this.rooms.occupyingRoomIds(canonical);
     // The cache is per replica but writes can arrive at any replica, so a cached day is only
     // reused while the room's stored bookings still match the fingerprint it was built from.
     const fingerprint = await this.bookings.fingerprint(ids);
