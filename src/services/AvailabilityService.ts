@@ -19,7 +19,11 @@ export class AvailabilityService {
     const room = await this.rooms.get(roomId);
     if (!room) throw new NotFoundError(`Room ${roomId}`);
     const canonical = await this.rooms.canonicalId(roomId);
-    const hit = this.cache.get(canonical, date);
+    const ids = await this.rooms.physicalRoomIds(canonical);
+    // The cache is per replica but writes can arrive at any replica, so a cached day is only
+    // reused while the room's stored bookings still match the fingerprint it was built from.
+    const fingerprint = await this.bookings.fingerprint(ids);
+    const hit = this.cache.get(canonical, date, fingerprint);
     if (hit) {
       metrics.increment('availability_cache_hit');
       return { ...hit, roomId };
@@ -28,8 +32,8 @@ export class AvailabilityService {
 
     const dayStart = parseDate(date);
     const day = { start: dayStart, end: dayStart + MINUTES_PER_DAY };
-    const ids = await this.rooms.physicalRoomIds(canonical);
-    const all = await this.bookings.findByRooms(ids);
+    // Cancelled bookings stay in the table for audit but no longer occupy the room.
+    const all = (await this.bookings.findByRooms(ids)).filter((b) => b.status === 'confirmed');
 
     const busy = [];
     for (const b of all) {
@@ -42,7 +46,7 @@ export class AvailabilityService {
       date,
       busy: sortSpans(busy).map((s) => ({ bookingId: s.bookingId, title: s.title, start: formatLocal(s.start), end: formatLocal(s.end) })),
     };
-    this.cache.set(value);
+    this.cache.set(value, fingerprint);
     return { ...value, roomId };
   }
 

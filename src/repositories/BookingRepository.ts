@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import { Database, Queryable } from '../db/Database';
 import { BookingRecord } from '../db/types';
 
@@ -12,6 +13,22 @@ export class BookingRepository {
   findByRooms(roomIds: string[], q: Queryable = this.db): Promise<BookingRecord[]> {
     const ids = new Set(roomIds);
     return q.query((t) => [...t.bookings.values()].filter((b) => ids.has(b.roomId)));
+  }
+
+  /**
+   * A token that changes whenever a booking in the given rooms is added, cancelled or
+   * rescheduled. Lets per-replica caches detect writes made through any replica without
+   * copying the bookings out of the table.
+   */
+  fingerprint(roomIds: string[], q: Queryable = this.db): Promise<string> {
+    const ids = new Set(roomIds);
+    return q.query((t) => {
+      const hash = crypto.createHash('sha1');
+      for (const b of t.bookings.values()) {
+        if (ids.has(b.roomId)) hash.update(`${b.id}|${b.status}|${b.start}|${b.end}|${JSON.stringify(b.recurrence)}\n`);
+      }
+      return hash.digest('base64');
+    });
   }
 
   insert(b: BookingRecord, q: Queryable = this.db): Promise<BookingRecord> {
