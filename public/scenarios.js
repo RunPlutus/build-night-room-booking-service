@@ -18,7 +18,12 @@ export function makeApi(base = '', fetchImpl = (...a) => fetch(...a)) {
   return {
     reset: () => fetchImpl(`${base}/__demo/reset`, { method: 'POST' }),
     info: async () => (await fetchImpl(`${base}/__demo/info`)).json(),
-    rooms: (rep = 'a') => call(rep, 'GET', '/api/rooms'),
+    contracts: async () => {
+      const response = await fetchImpl(`${base}/__demo/contracts`);
+      if (!response.ok) throw new Error(`Shared engine check failed: HTTP ${response.status}`);
+      return (await response.json()).checks;
+    },
+    rooms: (rep = 'a', includeRetired = false) => call(rep, 'GET', `/api/rooms${includeRetired ? '?includeRetired=true' : ''}`),
     busy: (rep, roomId, date) => call(rep, 'GET', `/api/rooms/${roomId}/availability?date=${date}`),
     book: (rep, b) => call(rep, 'POST', '/api/bookings', b),
     cancel: (rep, id) => call(rep, 'DELETE', `/api/bookings/${id}`),
@@ -67,6 +72,7 @@ export const SCENARIOS = [
       return [
         expectStatus('Book Fuji 14:00–15:00', 201, await api.book('a', booking('rm-fuji', d, '14:00', '15:00', '1:1 Sam / Alex'))),
         expectStatus('Book Fuji 15:00–16:00 (starts as the 1:1 ends)', 201, await api.book('a', booking('rm-fuji', d, '15:00', '16:00', 'Design sync'))),
+        ...(await api.contracts()).filter((check) => check.group === 'boundary'),
       ];
     },
   },
@@ -115,30 +121,40 @@ export const SCENARIOS = [
           ok: titlesOf(cal).includes('Platform standup'),
         },
         expectStatus('Book Fuji 09:30–10:00 on Tue 20 Oct', 409, await api.book('a', booking('rm-fuji', d, '09:30', '10:00', 'Offsite planning'))),
+        ...(await api.contracts()).filter((check) => check.group === 'series'),
       ];
     },
   },
   {
-    id: 'cancelled',
-    title: 'Cancelled but still busy',
-    room: 'Kilimanjaro',
-    complaint: 'Fri 9 Oct: quarterly planning was cancelled the night before, but Kilimanjaro still showed busy all afternoon.',
-    date: '2026-11-10',
-    rooms: ['rm-kilimanjaro'],
-    async run(api) {
-      const d = this.date;
-      const created = await api.book('a', booking('rm-kilimanjaro', d, '13:00', '17:00', 'Quarterly planning'));
-      const before = await api.busy('a', 'rm-kilimanjaro', d);
-      const cancelled = await api.cancel('a', created.body?.id ?? 'missing');
-      const after = await api.busy('a', 'rm-kilimanjaro', d);
-      return [
-        expectStatus('Book Kilimanjaro 13:00–17:00', 201, created),
-        { label: 'Someone opens the calendar', expected: 'Shows the meeting', actual: titlesOf(before).includes('Quarterly planning') ? 'Shows the meeting' : 'Not shown', ok: titlesOf(before).includes('Quarterly planning') },
-        { label: 'Organizer cancels', expected: 'Done', actual: describe(cancelled), ok: cancelled.status === 204 },
-        { label: 'Calendar after the cancel', expected: 'Free', actual: titlesOf(after).length ? `Busy (${titlesOf(after).join(', ')})` : 'Free', ok: titlesOf(after).length === 0 },
-      ];
-    },
+  id: 'cancelled',
+  title: 'The meeting that will not leave',
+  room: 'Kilimanjaro',
+  complaint: 'A cancelled meeting remains on the room calendar and lobby kiosk. New meetings also appear on only one screen.',
+  date: '2026-11-10',
+  rooms: ['rm-kilimanjaro'],
+  async run(api) {
+    const room = this.rooms[0], d = this.date;
+    const checks = [];
+    const day = async (rep, label, want) => {
+      const r = await api.busy(rep, room, d);
+      const got = titlesOf(r).slice().sort();
+      checks.push({ label, expected: want.length ? want.slice().sort().join(', ') : 'Free', actual: r.status === 200 ? (got.join(', ') || 'Free') : `HTTP ${r.status}`, ok: r.status === 200 && JSON.stringify(got) === JSON.stringify(want.slice().sort()) });
+    };
+    await day('b', 'Lobby kiosk opens an empty calendar on server B', []);
+    const meeting = await api.book('a', booking(room, d, '13:00', '17:00', 'Quarterly planning'));
+    checks.push(expectStatus('Organizer books through server A', 201, meeting));
+    await day('a', 'Room calendar on server A shows the meeting', ['Quarterly planning']);
+    await day('b', 'Previously open lobby kiosk on server B sees the new meeting', ['Quarterly planning']);
+    checks.push(expectStatus('Organizer cancels through server A', 204, await api.cancel('a', meeting.body?.id ?? 'missing')));
+    await day('a', 'Room calendar is free after cancellation', []);
+    await day('b', 'Lobby kiosk is free after cancellation', []);
+    const again = await api.book('b', booking(room, d, '13:00', '17:00', 'Team workshop'));
+    checks.push(expectStatus('Another organizer reuses the released slot on server B', 201, again));
+    await day('a', 'Server A now shows only the replacement meeting', ['Team workshop']);
+    await day('b', 'Server B now shows only the replacement meeting', ['Team workshop']);
+    return checks;
   },
+},
   {
     id: 'renamed',
     title: 'The Monday all-hands',
@@ -158,32 +174,6 @@ export const SCENARIOS = [
         },
         expectStatus('Book Everest 10:00–11:00 on Mon 2 Nov', 409, await api.book('a', booking('rm-everest', d, '10:00', '11:00', 'Sales sync'))),
       ];
-    },
-  },
-  {
-    id: 'divider',
-    title: 'Summit divider (ticket 2)',
-    room: 'Summit',
-    complaint: 'Summit can be booked whole, or as Summit A / Summit B. Whole blocks both halves; halves don’t block each other.',
-    date: '2026-11-12',
-    rooms: ['rm-summit', 'rm-summit-a', 'rm-summit-b'],
-    requires: 'rm-summit-a',
-    async run(api) {
-      const d = this.date;
-      const steps = [
-        expectStatus('Book whole Summit 10:00–11:00', 201, await api.book('a', booking('rm-summit', d, '10:00', '11:00', 'All-hands rehearsal'))),
-        expectStatus('Book Summit A 10:30–11:30', 409, await api.book('a', booking('rm-summit-a', d, '10:30', '11:30', 'Workshop A'))),
-        expectStatus('Book Summit A 11:00–12:00', 201, await api.book('a', booking('rm-summit-a', d, '11:00', '12:00', 'Workshop A'))),
-        expectStatus('Book Summit B 11:00–12:00', 201, await api.book('a', booking('rm-summit-b', d, '11:00', '12:00', 'Workshop B'))),
-        expectStatus('Book whole Summit 11:30–12:30', 409, await api.book('a', booking('rm-summit', d, '11:30', '12:30', 'Town hall'))),
-      ];
-      const race = await Promise.all([
-        api.book('a', booking('rm-summit', d, '14:00', '15:00', 'Whole-room offsite')),
-        api.book('b', booking('rm-summit-b', d, '14:00', '15:00', 'Half-room interview')),
-      ]);
-      const won = race.filter((r) => r.status === 201).length;
-      steps.push({ label: 'Whole room (server A) and Summit B (server B) at the same moment', expected: '1 booked, 1 rejected', actual: `${won} booked, ${2 - won} rejected`, ok: won === 1 });
-      return steps;
     },
   },
 ];

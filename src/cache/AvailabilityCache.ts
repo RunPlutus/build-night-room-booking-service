@@ -10,6 +10,7 @@ export interface CachedDay {
 }
 
 export class AvailabilityCache {
+  // Stored days are snapshots; later booking writes do not mutate these copies.
   private store = new Map<string, { value: CachedDay; expiresAt: number }>();
 
   constructor(private readonly ttlMs = 10 * 60_000, private readonly clock: () => number = Date.now) {}

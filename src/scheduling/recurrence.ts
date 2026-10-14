@@ -37,7 +37,11 @@ export function seriesLimit(first: Minutes, r: Recurrence): Minutes {
   return Math.min(byUntil, byCount);
 }
 
-/** Concrete occurrences of a booking (a one-off booking has exactly one). */
+/**
+ * Concrete occurrences of a booking (a one-off booking has exactly one).
+ * Manual maintainers: the output must cover the complete requested series,
+ * within the supported booking horizon, for every caller of this module.
+ */
 export function occurrences(b: Schedulable): Span[] {
   const start = parseLocal(b.start);
   const end = parseLocal(b.end);

@@ -1,4 +1,5 @@
 import { makeApi, SCENARIOS } from './scenarios.js';
+import { sameOccupiedSpace } from './room-spaces.js';
 
 const api = makeApi('');
 const DAY_START = 8 * 60;
@@ -6,7 +7,8 @@ const DAY_END = 19 * 60;
 const SPAN = DAY_END - DAY_START;
 
 const $ = (id) => document.getElementById(id);
-const state = { date: '2026-10-05', replica: 'a', rooms: [], highlight: new Set(), lastResults: {} };
+const state = { date: '2026-10-05', replica: 'a', rooms: [], allRooms: [], highlight: new Set(), lastResults: {}, running: false };
+let calendarRequest = 0;
 
 const pad = (n) => String(n).padStart(2, '0');
 const hm = (min) => `${pad(Math.floor(min / 60))}:${pad(min % 60)}`;
@@ -39,25 +41,7 @@ function describeResponse(r) {
 /* ---------- rooms ---------- */
 
 function orderRooms(rooms) {
-  const byParent = new Map();
-  for (const r of rooms) {
-    const p = r.parentId ?? '';
-    if (!byParent.has(p)) byParent.set(p, []);
-    byParent.get(p).push(r);
-  }
-  const ids = new Set(rooms.map((r) => r.id));
-  const top = rooms.filter((r) => !r.parentId || !ids.has(r.parentId)).sort((a, b) => a.floor - b.floor || a.name.localeCompare(b.name));
-  const out = [];
-  for (const r of top) {
-    out.push({ ...r, depth: 0 });
-    for (const c of (byParent.get(r.id) ?? []).sort((a, b) => a.name.localeCompare(b.name))) out.push({ ...c, depth: 1 });
-  }
-  return out;
-}
-
-async function loadRooms() {
-  const r = await api.rooms(state.replica);
-  state.rooms = orderRooms(r.body?.rooms ?? []);
+  return [...rooms].sort((a, b) => a.floor - b.floor || a.name.localeCompare(b.name)).map((room) => ({ ...room, depth: 0 }));
 }
 
 /* ---------- calendar ---------- */
@@ -75,7 +59,7 @@ function renderHours() {
   }
 }
 
-function layoutLanes(items) {
+function layoutLanes(items, rooms) {
   const sorted = [...items].sort((a, b) => a.s - b.s || a.e - b.e);
   const laneEnds = [];
   for (const it of sorted) {
@@ -83,17 +67,30 @@ function layoutLanes(items) {
     if (lane === -1) lane = laneEnds.push(0) - 1;
     laneEnds[lane] = it.e;
     it.lane = lane;
-    it.clash = sorted.some((o) => o !== it && o.s < it.e && it.s < o.e);
+    it.clash = sorted.some((o) => o !== it && o.s < it.e && it.s < o.e && sameOccupiedSpace(it.sourceRoomId, o.sourceRoomId, rooms));
   }
   return Math.max(1, laneEnds.length);
 }
 
 async function renderCalendar() {
-  const d = new Date(`${state.date}T00:00:00Z`);
-  $('dayLabel').textContent = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
-  $('date').value = state.date;
-  const rowsEl = $('rows');
-  const busy = await Promise.all(state.rooms.map((room) => api.busy(state.replica, room.id, state.date)));
+  const request = ++calendarRequest;
+  const { date, replica } = state;
+  try {
+    const inventory = await api.rooms(replica, true);
+    const allRooms = inventory.body?.rooms ?? [];
+    const rooms = orderRooms(allRooms.filter((room) => room.status !== 'retired'));
+    const results = await Promise.all(rooms.map(async (room) => {
+      const [busy, listed] = await Promise.all([api.busy(replica, room.id, date), api.list(replica, room.id, date, date)]);
+      return { busy, occurrences: listed.body?.occurrences ?? [] };
+    }));
+    if (request !== calendarRequest || date !== state.date || replica !== state.replica) return;
+    state.allRooms = allRooms;
+    state.rooms = rooms;
+    const sourceRoom = new Map(results.flatMap((result) => result.occurrences.map((item) => [item.bookingId, item.roomId])));
+    const d = new Date(`${date}T00:00:00Z`);
+    $('dayLabel').textContent = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+    $('date').value = date;
+    const rowsEl = $('rows');
   rowsEl.innerHTML = '';
   state.rooms.forEach((room, i) => {
     const row = document.createElement('div');
@@ -103,8 +100,8 @@ async function renderCalendar() {
     const track = document.createElement('div');
     track.className = 'track';
     track.setAttribute('aria-label', `${room.name} timeline`);
-    const items = (busy[i].body?.busy ?? []).map((b) => ({ ...b, s: minutesOf(b.start), e: minutesOf(b.end) }));
-    const lanes = layoutLanes(items);
+    const items = (results[i].busy.body?.busy ?? []).map((b) => ({ ...b, sourceRoomId: sourceRoom.get(b.bookingId), s: minutesOf(b.start), e: minutesOf(b.end) }));
+    const lanes = layoutLanes(items, allRooms);
     track.style.minHeight = `${Math.max(2.9, lanes * 1.6 + 0.6)}rem`;
     for (const it of items) {
       if (it.e <= DAY_START || it.s >= DAY_END) continue;
@@ -134,12 +131,12 @@ async function renderCalendar() {
     row.append(track);
     rowsEl.append(row);
   });
+  } catch (error) {
+    if (request === calendarRequest && date === state.date && replica === state.replica) toast(`Calendar failed: ${error.message}`, true);
+  }
 }
 
-async function refresh() {
-  await loadRooms();
-  await renderCalendar();
-}
+const refresh = renderCalendar;
 
 /* ---------- dialogs ---------- */
 
@@ -201,14 +198,18 @@ function renderScenarios() {
     li.innerHTML = `
       <div><div class="scen__title">${esc(sc.title)} ${prev === undefined ? '' : `<span class="scen__badge ${prev ? 'ok' : 'bad'}">${prev ? 'works' : 'bug'}</span>`}</div>
       <div class="scen__room">${esc(sc.room)}</div></div>
-      <button type="button" ${available ? '' : 'disabled'}>Replay</button>
-      <div class="scen__complaint">${esc(available ? sc.complaint : 'Needs the Summit A/B rooms from ticket 2 in data/rooms.json.')}</div>`;
+      <button type="button" ${available && !state.running ? '' : 'disabled'}>Replay</button>
+      <div class="scen__complaint">${esc(available ? sc.complaint : 'This replay needs room data that is not available.')}</div>`;
     li.querySelector('button').addEventListener('click', () => runScenario(sc, li.querySelector('button')));
     list.append(li);
   }
 }
 
 async function runScenario(sc, btn) {
+  if (state.running) return;
+  state.running = true;
+  renderScenarios();
+  $('reset').disabled = true;
   btn.disabled = true;
   btn.textContent = 'Running…';
   const out = $('result');
@@ -233,6 +234,8 @@ async function runScenario(sc, btn) {
   } catch (err) {
     out.innerHTML = `<h3>${esc(sc.title)}</h3><p class="verdict bad">The replay crashed</p><p class="hint">${esc(err?.message ?? err)}</p>`;
   } finally {
+    state.running = false;
+    $('reset').disabled = false;
     renderScenarios();
   }
 }
@@ -244,6 +247,7 @@ $('next').addEventListener('click', () => { state.date = shiftDate(state.date, 1
 $('date').addEventListener('change', (e) => { if (e.target.value) { state.date = e.target.value; state.highlight.clear(); renderCalendar(); } });
 $('replica').addEventListener('change', (e) => { state.replica = e.target.value; refresh(); });
 $('reset').addEventListener('click', async () => {
+  if (state.running) return;
   await api.reset();
   state.lastResults = {};
   state.highlight.clear();

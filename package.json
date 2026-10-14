@@ -11,7 +11,8 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "validate:data": "tsx scripts/validate-data.ts",
-    "export:ical": "tsx scripts/export-ical.ts"
+    "export:ical": "tsx scripts/export-ical.ts",
+    "replay": "node scripts/replay-complaint.mjs"
   },
   "engines": {
     "node": ">=20"

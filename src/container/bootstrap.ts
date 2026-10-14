@@ -19,6 +19,7 @@ export interface AppOptions {
 }
 
 export function buildContainer(opts: AppOptions = {}): Container {
+  // Each app owns this container. A singleton is reused within this container.
   const c = new Container();
   c.register(TOKENS.Config, () => loadConfig());
   c.register(TOKENS.Policies, () => loadPolicies());

@@ -15,6 +15,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
+import { runSchedulingContracts } from './scheduling-contracts';
 
 const REPO = path.resolve(process.env.DEMO_REPO ?? process.cwd());
 const PUBLIC = path.resolve(process.env.DEMO_PUBLIC ?? path.join(REPO, 'public'));
@@ -48,7 +49,7 @@ const TYPES: Record<string, string> = {
   '.svg': 'image/svg+xml',
 };
 
-http
+const server = http
   .createServer((req, res) => {
     const url = new URL(req.url ?? '/', 'http://localhost');
     const m = /^\/(a|b)(\/.*)$/.exec(url.pathname);
@@ -62,6 +63,19 @@ http
         res.writeHead(204).end();
       } catch (err) {
         res.writeHead(500, { 'content-type': 'text/plain' }).end(String(err));
+      }
+      return;
+    }
+    if (url.pathname === '/__demo/contracts' && req.method === 'GET') {
+      try {
+        const engine = {
+          ...requireFromRepo(path.join(SRC, 'scheduling/overlap')),
+          ...requireFromRepo(path.join(SRC, 'scheduling/recurrence')),
+        };
+        const checks = runSchedulingContracts(engine);
+        res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-store' }).end(JSON.stringify({ checks }));
+      } catch (error) {
+        res.writeHead(500, { 'content-type': 'application/json' }).end(JSON.stringify({ error: String(error) }));
       }
       return;
     }
@@ -80,5 +94,7 @@ http
   })
   .listen(PORT, () => {
     console.log(`\n  Room booking demo for "${path.basename(REPO)}"`);
-    console.log(`  http://localhost:${PORT}   (two replicas, one shared database)\n`);
+    const address = server.address();
+    const actualPort = typeof address === 'object' && address ? address.port : PORT;
+    console.log(`  http://localhost:${actualPort}   (two replicas, one shared database)\n`);
   });

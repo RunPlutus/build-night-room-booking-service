@@ -8,7 +8,7 @@ export class BookingRepository {
     return q.query((t) => t.bookings.get(id));
   }
 
-  /** All bookings (any status) in any of the given rooms. */
+  /** All bookings (any status) in any of the given rooms. Calendar callers select occupying statuses; audit callers retain all. */
   findByRooms(roomIds: string[], q: Queryable = this.db): Promise<BookingRecord[]> {
     const ids = new Set(roomIds);
     return q.query((t) => [...t.bookings.values()].filter((b) => ids.has(b.roomId)));
