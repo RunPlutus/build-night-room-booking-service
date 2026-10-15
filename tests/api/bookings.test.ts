@@ -54,18 +54,23 @@ describe('POST /api/bookings', () => {
     expect(res.status).toBe(409);
     expect(res.body.error.details[0].title).toBe('Platform standup');
 
-    const laterRes = await book(app, booking('rm-fuji', '2026-10-20T09:30', '2026-10-20T10:00'));
-    expect(laterRes.status).toBe(409);
-    expect(laterRes.body.error.details[0].title).toBe('Platform standup');
+    const oct6Res = await book(app, booking('rm-fuji', '2026-10-06T09:30', '2026-10-06T10:00'));
+    expect(oct6Res.status).toBe(409);
+    expect(oct6Res.body.error.details[0].title).toBe('Platform standup');
+
+    const oct20Res = await book(app, booking('rm-fuji', '2026-10-20T09:30', '2026-10-20T10:00'));
+    expect(oct20Res.status).toBe(409);
+    expect(oct20Res.body.error.details[0].title).toBe('Platform standup');
   });
 
-  it('detects a clash between a new weekly series and an existing one-off', async () => {
-    await book(app, booking('rm-rainier', '2026-11-19T11:00', '2026-11-19T12:00', { title: 'Offsite debrief' }));
+  it('detects a clash between a new weekly series and an existing one-off (including week 10)', async () => {
+    await book(app, booking('rm-rainier', '2027-01-07T11:00', '2027-01-07T12:00', { title: 'Offsite debrief' }));
     const res = await book(
       app,
       booking('rm-rainier', '2026-11-05T11:00', '2026-11-05T11:30', { recurrence: { freq: 'WEEKLY', count: 10 } }),
     );
     expect(res.status).toBe(409);
+    expect(res.body.error.details[0].title).toBe('Offsite debrief');
   });
 
   it('treats a renamed room as the same physical room (Atlas -> Olympus)', async () => {
@@ -79,9 +84,13 @@ describe('POST /api/bookings', () => {
     expect(retiredRes.status).toBe(400);
     expect(retiredRes.body.error.code).toBe('ROOM_RETIRED');
 
-    const conflictRes = await book(app, booking('rm-everest', '2026-11-02T10:00', '2026-11-02T11:00'));
-    expect(conflictRes.status).toBe(409);
-    expect(conflictRes.body.error.details[0].title).toBe('Monday all-hands');
+    const oct5Conflict = await book(app, booking('rm-everest', '2026-10-05T10:00', '2026-10-05T11:00'));
+    expect(oct5Conflict.status).toBe(409);
+    expect(oct5Conflict.body.error.details[0].title).toBe('Monday all-hands');
+
+    const nov2Conflict = await book(app, booking('rm-everest', '2026-11-02T10:00', '2026-11-02T11:00'));
+    expect(nov2Conflict.status).toBe(409);
+    expect(nov2Conflict.body.error.details[0].title).toBe('Monday all-hands');
   });
 
   it('allows only one booking when concurrent requests for the same slot arrive across replicas', async () => {
@@ -145,10 +154,17 @@ describe('GET / DELETE /api/bookings/:id', () => {
     expect(res.body.status).toBe('cancelled');
   });
 
-  it('frees the slot for new bookings after cancelling', async () => {
-    const created = await book(app, booking('rm-fuji', '2026-11-03T14:00', '2026-11-03T15:00'));
-    await request(app).delete(`/api/bookings/${created.body.id}`);
-    const res = await book(app, booking('rm-fuji', '2026-11-03T14:00', '2026-11-03T15:00'));
+  it('frees the slot for new bookings and updates availability after cancelling', async () => {
+    const created = await book(app, booking('rm-fuji', '2026-11-03T14:00', '2026-11-03T15:00', { title: 'Initial booking' }));
+    const beforeCancel = await request(app).get('/api/rooms/rm-fuji/availability').query({ date: '2026-11-03' });
+    expect(beforeCancel.body.busy.map((b: any) => b.title)).toContain('Initial booking');
+
+    await request(app).delete(`/api/bookings/${created.body.id}`).expect(204);
+
+    const afterCancel = await request(app).get('/api/rooms/rm-fuji/availability').query({ date: '2026-11-03' });
+    expect(afterCancel.body.busy.map((b: any) => b.title)).not.toContain('Initial booking');
+
+    const res = await book(app, booking('rm-fuji', '2026-11-03T14:00', '2026-11-03T15:00', { title: 'Replacement booking' }));
     expect(res.status).toBe(201);
   });
 
@@ -165,10 +181,14 @@ describe('GET / DELETE /api/bookings/:id', () => {
 });
 
 describe('GET /api/bookings (occurrences)', () => {
-  it('lists occurrences of recurring meetings in range', async () => {
+  it('lists occurrences of recurring meetings in range including past week 8', async () => {
     const res = await request(app).get('/api/bookings').query({ roomId: 'rm-fuji', from: '2026-07-06', to: '2026-07-19' });
     const standups = res.body.occurrences.filter((o: any) => o.title === 'Platform standup');
     expect(standups.map((o: any) => o.start)).toEqual(['2026-07-07T09:30', '2026-07-14T09:30']);
+
+    const octRes = await request(app).get('/api/bookings').query({ roomId: 'rm-fuji', from: '2026-10-05', to: '2026-10-21' });
+    const octStandups = octRes.body.occurrences.filter((o: any) => o.title === 'Platform standup');
+    expect(octStandups.map((o: any) => o.start)).toEqual(['2026-10-06T09:30', '2026-10-13T09:30', '2026-10-20T09:30']);
   });
 
   it('requires roomId/from/to', async () => {
