@@ -35,6 +35,9 @@ export function validateBookingInput(body: any, policies: Policies): BookingInpu
     if (recurrence.interval != null && (!Number.isInteger(recurrence.interval) || recurrence.interval < 1)) {
       throw new ValidationError('recurrence.interval must be a positive integer');
     }
+    if (recurrence.count != null && (!Number.isSafeInteger(recurrence.count) || recurrence.count < 1)) {
+      throw new ValidationError('recurrence.count must be a positive integer');
+    }
     if (recurrence.until == null && recurrence.count == null) throw new ValidationError('recurrence needs until or count');
     if (e - s > MINUTES_PER_DAY) throw new ValidationError('recurring bookings must be shorter than a day');
     const span =
