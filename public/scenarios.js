@@ -176,4 +176,30 @@ export const SCENARIOS = [
       ];
     },
   },
+  {
+    id: 'divider',
+    title: 'Summit divider (ticket 2)',
+    room: 'Summit',
+    complaint: 'Summit can be booked whole, or as Summit A / Summit B. Whole blocks both halves; halves don’t block each other.',
+    date: '2026-11-12',
+    rooms: ['rm-summit', 'rm-summit-a', 'rm-summit-b'],
+    requires: 'rm-summit-a',
+    async run(api) {
+      const d = this.date;
+      const steps = [
+        expectStatus('Book whole Summit 10:00–11:00', 201, await api.book('a', booking('rm-summit', d, '10:00', '11:00', 'All-hands rehearsal'))),
+        expectStatus('Book Summit A 10:30–11:30', 409, await api.book('a', booking('rm-summit-a', d, '10:30', '11:30', 'Workshop A'))),
+        expectStatus('Book Summit A 11:00–12:00', 201, await api.book('a', booking('rm-summit-a', d, '11:00', '12:00', 'Workshop A'))),
+        expectStatus('Book Summit B 11:00–12:00', 201, await api.book('a', booking('rm-summit-b', d, '11:00', '12:00', 'Workshop B'))),
+        expectStatus('Book whole Summit 11:30–12:30', 409, await api.book('a', booking('rm-summit', d, '11:30', '12:30', 'Town hall'))),
+      ];
+      const race = await Promise.all([
+        api.book('a', booking('rm-summit', d, '14:00', '15:00', 'Whole-room offsite')),
+        api.book('b', booking('rm-summit-b', d, '14:00', '15:00', 'Half-room interview')),
+      ]);
+      const won = race.filter((r) => r.status === 201).length;
+      steps.push({ label: 'Whole room (server A) and Summit B (server B) at the same moment', expected: '1 booked, 1 rejected', actual: `${won} booked, ${2 - won} rejected`, ok: won === 1 });
+      return steps;
+    },
+  },
 ];
