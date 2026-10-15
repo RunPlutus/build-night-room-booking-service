@@ -19,7 +19,7 @@ export class AvailabilityService {
     const room = await this.rooms.get(roomId);
     if (!room) throw new NotFoundError(`Room ${roomId}`);
     const canonical = await this.rooms.canonicalId(roomId);
-    const ids = await this.rooms.physicalRoomIds(canonical);
+    const ids = await this.rooms.blockingRoomIds(canonical);
     const revision = await this.bookings.revision(ids);
     const hit = this.cache.get(canonical, date, revision);
     if (hit) {

@@ -18,6 +18,19 @@ for (const r of rooms) {
   ids.add(r.id);
   if (r.status === 'retired' && !r.replacedBy) warn(`retired room ${r.id} has no replacedBy`);
   if (r.replacedBy && !rooms.some((x) => x.id === r.replacedBy)) err(`${r.id}.replacedBy points at missing room ${r.replacedBy}`);
+  if (r.parentId && !rooms.some((x) => x.id === r.parentId)) err(`${r.id}.parentId points at missing room ${r.parentId}`);
+  if (r.parentId && r.parentId === r.id) err(`${r.id}.parentId points at itself`);
+}
+
+const byId = new Map(rooms.map((r) => [r.id, r]));
+for (const r of rooms) {
+  const seen = new Set<string>();
+  let cur: string | undefined = r.id;
+  while (cur && !seen.has(cur)) {
+    seen.add(cur);
+    cur = byId.get(cur)?.parentId;
+  }
+  if (cur) err(`${r.id} has a parentId cycle through ${cur}`);
 }
 
 const active = rooms.filter((r) => r.status === 'active');

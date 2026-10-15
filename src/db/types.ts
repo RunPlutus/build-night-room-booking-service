@@ -9,6 +9,8 @@ export interface RoomRecord {
   status: 'active' | 'retired';
   /** For retired rooms that were renamed/replaced: the room that took over its bookings. */
   replacedBy?: string;
+  /** For a part of a divisible room: the room it is physically inside of. */
+  parentId?: string;
   createdAt: string;
 }
 
