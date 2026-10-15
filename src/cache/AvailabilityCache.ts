@@ -11,7 +11,7 @@ export interface CachedDay {
 
 export class AvailabilityCache {
   // Stored days are snapshots; later booking writes do not mutate these copies.
-  private store = new Map<string, { value: CachedDay; expiresAt: number }>();
+  private store = new Map<string, { value: CachedDay; version?: string; expiresAt: number }>();
 
   constructor(private readonly ttlMs = 10 * 60_000, private readonly clock: () => number = Date.now) {}
 
@@ -19,18 +19,19 @@ export class AvailabilityCache {
     return `${roomId}:${date}`;
   }
 
-  get(roomId: string, date: string): CachedDay | undefined {
+  /** When `version` is given, an entry stored under a different version is a miss. */
+  get(roomId: string, date: string, version?: string): CachedDay | undefined {
     const e = this.store.get(this.key(roomId, date));
     if (!e) return undefined;
-    if (e.expiresAt < this.clock()) {
+    if (e.expiresAt < this.clock() || (version !== undefined && e.version !== version)) {
       this.store.delete(this.key(roomId, date));
       return undefined;
     }
     return structuredClone(e.value);
   }
 
-  set(value: CachedDay): void {
-    this.store.set(this.key(value.roomId, value.date), { value: structuredClone(value), expiresAt: this.clock() + this.ttlMs });
+  set(value: CachedDay, version?: string): void {
+    this.store.set(this.key(value.roomId, value.date), { value: structuredClone(value), version, expiresAt: this.clock() + this.ttlMs });
   }
 
   /** Drops every cached day for a room. */

@@ -25,12 +25,6 @@ export class BookingService {
     if (!room) throw new NotFoundError(`Room ${input.roomId}`);
     if (room.status === 'retired') throw new RoomRetiredError(room.id, room.replacedBy);
 
-    const clashes = await this.conflicts.find(input);
-    if (clashes.length > 0) {
-      metrics.increment('booking_conflict');
-      throw new ConflictError(clashes);
-    }
-
     const record: BookingRecord = {
       id: `bk_${crypto.randomUUID().slice(0, 8)}`,
       roomId: room.id,
@@ -42,7 +36,16 @@ export class BookingService {
       status: 'confirmed',
       createdAt: this.now().toISOString(),
     };
-    await this.bookings.insert(record);
+    // Check and insert in one serializable transaction so concurrent requests,
+    // possibly on different replicas, cannot both pass the conflict check.
+    await this.db.transaction(async (tx) => {
+      const clashes = await this.conflicts.find(input, tx);
+      if (clashes.length > 0) {
+        metrics.increment('booking_conflict');
+        throw new ConflictError(clashes);
+      }
+      await this.bookings.insert(record, tx);
+    });
     this.cache.invalidateRoom(await this.rooms.canonicalId(room.id));
     metrics.increment('booking_created');
     events.track('booking_created', { roomId: room.id, recurring: !!record.recurrence });
