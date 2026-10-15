@@ -13,6 +13,7 @@ Verification
 - npm test: exit 0; 8 files, 92 passed, 0 failed, 0 skipped.
 - npm run replay: exit 1; 17 passed, 13 failed, 0 skipped (30 checks).
 - npm run validate:data: exit 0; 0 errors, 0 warnings.
+- Scope: verified against the supplied shared in-process Database used by several app instances, not real Cloud SQL.
 
 Remaining
 Some ticket requirements still fail. The implementation is incomplete.
