@@ -3,14 +3,14 @@ Incomplete.
 
 Completed changes
 - Booking creation runs the conflict check and insert in one serializable database transaction, so simultaneous requests on different replicas cannot both be confirmed.
-- Cached availability days are validated against a fingerprint of the room's bookings in the shared database, so creates and cancellations show on every replica while unchanged repeated reads still use the cache.
-- Cancelled bookings no longer count as busy in availability; the cancelled record is kept for audit.
-- Room 4B is marked retired with replacedBy rm-everest (FAC-88); no booking records were changed. Regression tests in tests/api/replicas.test.ts cover these changes using two app instances sharing one database.
+- Cached availability days are validated against a fingerprint of the room's bookings in the shared database, so creates and cancellations show on every replica while unchanged repeated reads still use the cache; cancelled bookings no longer count as busy and remain available for audit.
+- Room 4B is marked retired with replacedBy rm-everest (FAC-88); no booking records were changed.
+- Ticket 2: conflicts and availability treat a divisible room and its parts (parentId) as shared space, so the whole of Summit and either half block each other while the two halves stay independent. Regression tests in tests/api/replicas.test.ts cover all of these changes using two app instances sharing one database.
 
 Verification
 - npm run typecheck: exit 0.
-- npm test: exit 0; 75 passed, 0 failed, 0 skipped.
-- npm run replay: exit 1; 14 passed, 10 failed, 0 skipped (24 checks).
+- npm test: exit 0; 81 passed, 0 failed, 0 skipped.
+- npm run replay: exit 1; 17 passed, 13 failed, 0 skipped (30 checks).
 
 Remaining
 Some ticket requirements still fail. The implementation is incomplete.

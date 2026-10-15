@@ -22,7 +22,7 @@ export class ConflictService {
    * (one entry per clashing booking, showing its first clashing occurrence).
    */
   async find(candidate: Candidate, q: Queryable = this.db): Promise<ConflictInfo[]> {
-    const roomIds = await this.rooms.physicalRoomIds(candidate.roomId, q);
+    const roomIds = await this.rooms.occupiedSpaceRoomIds(candidate.roomId, q);
     const existing = (await this.bookings.findByRooms(roomIds, q)).filter((b) => b.status === 'confirmed');
     const mine = occurrences(candidate);
     const out: ConflictInfo[] = [];

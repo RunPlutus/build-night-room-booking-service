@@ -96,3 +96,47 @@ describe('renamed room 4B -> Everest', () => {
     expect(res.status).toBe(201);
   });
 });
+
+describe('Summit divider (ticket 2)', () => {
+  const d = '2026-11-12';
+
+  it('blocks both halves while the whole room is booked', async () => {
+    expect((await book(a, booking('rm-summit', `${d}T10:00`, `${d}T11:00`, { title: 'Whole room' }))).status).toBe(201);
+    const half = await book(b, booking('rm-summit-a', `${d}T10:30`, `${d}T11:30`));
+    expect(half.status).toBe(409);
+    expect(half.body.error.details[0]).toMatchObject({ title: 'Whole room' });
+    expect((await book(a, booking('rm-summit-b', `${d}T09:30`, `${d}T10:30`))).status).toBe(409);
+  });
+
+  it('blocks the whole room while either half is booked', async () => {
+    expect((await book(a, booking('rm-summit-b', `${d}T13:00`, `${d}T14:00`, { title: 'Half B' }))).status).toBe(201);
+    const whole = await book(b, booking('rm-summit', `${d}T13:30`, `${d}T14:30`));
+    expect(whole.status).toBe(409);
+    expect(whole.body.error.details[0]).toMatchObject({ title: 'Half B' });
+  });
+
+  it('lets both halves be booked at the same time', async () => {
+    expect((await book(a, booking('rm-summit-a', `${d}T15:00`, `${d}T16:00`))).status).toBe(201);
+    expect((await book(b, booking('rm-summit-b', `${d}T15:00`, `${d}T16:00`))).status).toBe(201);
+  });
+
+  it('confirms only one of a simultaneous whole-room and half-room request on different replicas', async () => {
+    const results = await Promise.all([
+      book(a, booking('rm-summit', `${d}T14:00`, `${d}T15:00`)),
+      book(b, booking('rm-summit-b', `${d}T14:00`, `${d}T15:00`)),
+    ]);
+    expect(results.map((r) => r.status).sort()).toEqual([201, 409]);
+  });
+
+  it('shows the whole room busy when a half is booked, but not the other half', async () => {
+    await book(a, booking('rm-summit-a', `${d}T09:00`, `${d}T10:00`, { title: 'Half A' }));
+    expect(titles(await availability(b, 'rm-summit', d))).toEqual(['Half A']);
+    expect(titles(await availability(b, 'rm-summit-a', d))).toEqual(['Half A']);
+    expect(titles(await availability(b, 'rm-summit-b', d))).toEqual([]);
+  });
+
+  it('leaves other rooms on the floor independent of Summit', async () => {
+    await book(a, booking('rm-summit', `${d}T10:00`, `${d}T11:00`));
+    expect((await book(b, booking('rm-hood', `${d}T10:00`, `${d}T11:00`))).status).toBe(201);
+  });
+});

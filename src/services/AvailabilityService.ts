@@ -19,7 +19,7 @@ export class AvailabilityService {
     const room = await this.rooms.get(roomId);
     if (!room) throw new NotFoundError(`Room ${roomId}`);
     const canonical = await this.rooms.canonicalId(roomId);
-    const ids = await this.rooms.physicalRoomIds(canonical);
+    const ids = await this.rooms.occupiedSpaceRoomIds(canonical);
     // Writes may land on another replica, so validate against the shared database.
     const version = await this.bookings.roomsVersion(ids);
     const hit = this.cache.get(canonical, date, version);
