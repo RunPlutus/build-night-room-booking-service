@@ -34,4 +34,17 @@ export class BookingRepository {
   count(q: Queryable = this.db): Promise<number> {
     return q.query((t) => t.bookings.size);
   }
+
+  roomVersion(roomIds: string[], q: Queryable = this.db): Promise<string> {
+    const ids = new Set(roomIds);
+    return q.query((t) => {
+      const parts: string[] = [];
+      for (const b of t.bookings.values()) {
+        if (ids.has(b.roomId)) {
+          parts.push(`${b.id}:${b.status}:${b.cancelledAt ?? ''}`);
+        }
+      }
+      return parts.sort().join('|');
+    });
+  }
 }

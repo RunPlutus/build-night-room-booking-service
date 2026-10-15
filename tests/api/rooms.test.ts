@@ -49,6 +49,45 @@ describe('availability', () => {
   it('shows bookings made under a renamed room id', async () => {
     const res = await availability(app, 'rm-olympus', '2026-09-03');
     expect(res.body.busy.map((b: any) => b.title)).toContain('Design review');
+    const everestRes = await availability(app, 'rm-everest', '2026-03-09');
+    expect(everestRes.body.busy.map((b: any) => b.title)).toContain('Monday all-hands');
+  });
+
+  it('excludes cancelled bookings from availability while keeping confirmed bookings', async () => {
+    const res = await availability(app, 'rm-kilimanjaro', '2026-10-09');
+    const titles = res.body.busy.map((b: any) => b.title);
+    expect(titles).toContain('Vendor review');
+    expect(titles).not.toContain('Quarterly planning');
+  });
+
+  it('updates availability across replicas on create and cancel while preserving audit record', async () => {
+    const { createDatabase } = await import('../../src/db');
+    const { createApp } = await import('../../src/app');
+    const db = createDatabase();
+    const appA = createApp({ db });
+    const appB = createApp({ db });
+
+    const initialB = await availability(appB, 'rm-kilimanjaro', '2026-11-10');
+    expect(initialB.body.busy).toEqual([]);
+
+    const created = await book(appA, booking('rm-kilimanjaro', '2026-11-10T13:00', '2026-11-10T17:00', { title: 'Quarterly planning' }));
+    expect(created.status).toBe(201);
+
+    const afterCreateA = await availability(appA, 'rm-kilimanjaro', '2026-11-10');
+    const afterCreateB = await availability(appB, 'rm-kilimanjaro', '2026-11-10');
+    expect(afterCreateA.body.busy.map((b: any) => b.title)).toEqual(['Quarterly planning']);
+    expect(afterCreateB.body.busy.map((b: any) => b.title)).toEqual(['Quarterly planning']);
+
+    await request(appA).delete(`/api/bookings/${created.body.id}`).expect(204);
+
+    const auditRes = await request(appB).get(`/api/bookings/${created.body.id}`);
+    expect(auditRes.status).toBe(200);
+    expect(auditRes.body.status).toBe('cancelled');
+
+    const afterCancelA = await availability(appA, 'rm-kilimanjaro', '2026-11-10');
+    const afterCancelB = await availability(appB, 'rm-kilimanjaro', '2026-11-10');
+    expect(afterCancelA.body.busy).toEqual([]);
+    expect(afterCancelB.body.busy).toEqual([]);
   });
 
   it('validates the date', async () => {

@@ -62,6 +62,38 @@ describe('POST /api/bookings', () => {
     expect(res.body.error.details[0].title).toBe('Design review');
   });
 
+  it('treats 4B -> Everest as the same physical room and refuses direct bookings in retired 4B', async () => {
+    const retiredRes = await book(app, booking('rm-4b', '2026-11-03T10:00', '2026-11-03T11:00'));
+    expect(retiredRes.status).toBe(400);
+    expect(retiredRes.body.error.code).toBe('ROOM_RETIRED');
+
+    const conflictRes = await book(app, booking('rm-everest', '2026-03-09T10:00', '2026-03-09T11:00'));
+    expect(conflictRes.status).toBe(409);
+    expect(conflictRes.body.error.details[0].title).toBe('Monday all-hands');
+  });
+
+  it('allows only one booking when concurrent requests for the same slot arrive across replicas', async () => {
+    const { createDatabase } = await import('../../src/db');
+    const { createApp } = await import('../../src/app');
+    const db = createDatabase();
+    const appA = createApp({ db });
+    const appB = createApp({ db });
+
+    const results = await Promise.all([
+      book(appA, booking('rm-rainier', '2026-11-05T13:00', '2026-11-05T14:00', { title: 'Customer call' })),
+      book(appB, booking('rm-rainier', '2026-11-05T13:00', '2026-11-05T14:00', { title: 'Interview loop' })),
+      book(appA, booking('rm-rainier', '2026-11-05T13:00', '2026-11-05T14:00', { title: 'Team sync' })),
+      book(appB, booking('rm-rainier', '2026-11-05T13:00', '2026-11-05T14:00', { title: 'Hiring debrief' })),
+    ]);
+
+    expect(results.filter((r) => r.status === 201)).toHaveLength(1);
+    expect(results.filter((r) => r.status === 409)).toHaveLength(3);
+
+    const listRes = await request(appA).get('/api/bookings').query({ roomId: 'rm-rainier', from: '2026-11-05', to: '2026-11-05' });
+    const confirmed = listRes.body.occurrences.filter((o: any) => o.status === 'confirmed' && o.start === '2026-11-05T13:00');
+    expect(confirmed).toHaveLength(1);
+  });
+
   it('refuses bookings in a retired room', async () => {
     const res = await book(app, booking('rm-atlas', '2026-11-03T10:00', '2026-11-03T11:00'));
     expect(res.status).toBe(400);

@@ -19,7 +19,9 @@ export class AvailabilityService {
     const room = await this.rooms.get(roomId);
     if (!room) throw new NotFoundError(`Room ${roomId}`);
     const canonical = await this.rooms.canonicalId(roomId);
-    const hit = this.cache.get(canonical, date);
+    const ids = await this.rooms.physicalRoomIds(canonical);
+    const version = await this.bookings.roomVersion(ids);
+    const hit = this.cache.get(canonical, date, version);
     if (hit) {
       metrics.increment('availability_cache_hit');
       return { ...hit, roomId };
@@ -28,8 +30,7 @@ export class AvailabilityService {
 
     const dayStart = parseDate(date);
     const day = { start: dayStart, end: dayStart + MINUTES_PER_DAY };
-    const ids = await this.rooms.physicalRoomIds(canonical);
-    const all = await this.bookings.findByRooms(ids);
+    const all = (await this.bookings.findByRooms(ids)).filter((b) => b.status === 'confirmed');
 
     const busy = [];
     for (const b of all) {
@@ -42,7 +43,7 @@ export class AvailabilityService {
       date,
       busy: sortSpans(busy).map((s) => ({ bookingId: s.bookingId, title: s.title, start: formatLocal(s.start), end: formatLocal(s.end) })),
     };
-    this.cache.set(value);
+    this.cache.set(value, version);
     return { ...value, roomId };
   }
 
