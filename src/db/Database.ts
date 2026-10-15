@@ -25,6 +25,7 @@ export class Database implements Queryable {
     this.tables = {
       rooms: new Map(seed.rooms.map((r) => [r.id, structuredClone(r)])),
       bookings: new Map(seed.bookings.map((b) => [b.id, structuredClone(b)])),
+      bookingRevisions: new Map(),
     };
   }
 

@@ -28,6 +28,15 @@ describe('overlaps', () => {
   it('separate spans do not overlap', () => {
     expect(overlaps(span('2026-11-03T10:00', '2026-11-03T11:00'), span('2026-11-03T13:00', '2026-11-03T14:00'))).toBe(false);
   });
+  it('back-to-back spans do not overlap (half-open intervals, FAC-12)', () => {
+    const first = span('2026-10-07T14:00', '2026-10-07T15:00');
+    const second = span('2026-10-07T15:00', '2026-10-07T16:00');
+    expect(overlaps(first, second)).toBe(false);
+    expect(overlaps(second, first)).toBe(false);
+  });
+  it('a one-minute overlap at the boundary is still detected', () => {
+    expect(overlaps(span('2026-10-07T14:00', '2026-10-07T15:01'), span('2026-10-07T15:00', '2026-10-07T16:00'))).toBe(true);
+  });
 });
 
 describe('recurrence', () => {
@@ -45,6 +54,21 @@ describe('recurrence', () => {
   it('every other week', () => {
     const occ = occurrences({ start: '2026-11-03T10:00', end: '2026-11-03T10:30', recurrence: { freq: 'WEEKLY', interval: 2, count: 2 } });
     expect(formatLocal(occ[1].start)).toBe('2026-11-17T10:00');
+  });
+  it('expands a weekly series past eight occurrences', () => {
+    const occ = occurrences({ start: '2027-01-04T09:30', end: '2027-01-04T10:00', recurrence: { freq: 'WEEKLY', count: 12 } });
+    expect(occ).toHaveLength(12);
+    expect(formatLocal(occ[11].start)).toBe('2027-03-22T09:30');
+  });
+  it('includes the final day of a long daily series', () => {
+    const occ = occurrences({ start: '2026-11-01T10:00', end: '2026-11-01T10:30', recurrence: { freq: 'DAILY', until: '2026-11-10' } });
+    expect(occ).toHaveLength(10);
+    expect(formatLocal(occ[9].start)).toBe('2026-11-10T10:00');
+  });
+  it('covers a full year of weekly meetings', () => {
+    const occ = occurrences({ start: '2026-07-07T09:30', end: '2026-07-07T09:45', recurrence: { freq: 'WEEKLY', until: '2027-06-29' } });
+    expect(occ).toHaveLength(52);
+    expect(formatLocal(occ[occ.length - 1].start)).toBe('2027-06-29T09:30');
   });
   it('series limit', () => {
     expect(seriesLimit(parseLocal('2026-11-03T10:00'), { freq: 'WEEKLY', until: '2026-11-10' })).toBe(parseDate('2026-11-11'));

@@ -31,6 +31,7 @@ export interface BookingRecord {
 export interface Tables {
   rooms: Map<string, RoomRecord>;
   bookings: Map<string, BookingRecord>;
+  bookingRevisions: Map<string, number>;
 }
 
 export interface Seed {

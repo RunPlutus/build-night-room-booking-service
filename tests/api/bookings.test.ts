@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import request from 'supertest';
 import { App, freshApp, booking, book } from '../helpers/app';
+import { createApp } from '../../src/app';
+import { createDatabase } from '../../src/db';
 
 let app: App;
 beforeEach(() => {
@@ -27,6 +29,40 @@ describe('POST /api/bookings', () => {
     await book(app, booking('rm-fuji', '2026-11-03T13:00', '2026-11-03T16:00'));
     const res = await book(app, booking('rm-fuji', '2026-11-03T14:00', '2026-11-03T14:30'));
     expect(res.status).toBe(409);
+  });
+
+  it('allows a booking that starts exactly when the previous one ends (Fuji, Wed 7 Oct)', async () => {
+    const res = await book(app, booking('rm-fuji', '2026-10-07T15:00', '2026-10-07T16:00'));
+    expect(res.status).toBe(201);
+  });
+
+  it('allows a booking that ends exactly when the next one starts', async () => {
+    const res = await book(app, booking('rm-fuji', '2026-10-07T13:00', '2026-10-07T14:00'));
+    expect(res.status).toBe(201);
+  });
+
+  it('detects a clash with a weekly series months after it started (Fuji standup, Tue 6 Oct)', async () => {
+    const res = await book(app, booking('rm-fuji', '2026-10-06T09:00', '2026-10-06T12:00'));
+    expect(res.status).toBe(409);
+    expect(res.body.error.details[0]).toMatchObject({ title: 'Platform standup', start: '2026-10-06T09:30', end: '2026-10-06T09:45' });
+  });
+
+  it('detects a clash in the final week of a year-long series', async () => {
+    const res = await book(app, booking('rm-fuji', '2027-06-29T09:30', '2027-06-29T10:00'));
+    expect(res.status).toBe(409);
+    expect(res.body.error.details[0].title).toBe('Platform standup');
+  });
+
+  it('counts bookings made under the old 4B id against Everest (Mon 5 Oct all-hands)', async () => {
+    const res = await book(app, booking('rm-everest', '2026-10-05T10:00', '2026-10-05T11:00'));
+    expect(res.status).toBe(409);
+    expect(res.body.error.details[0].title).toBe('Monday all-hands');
+  });
+
+  it('refuses direct bookings in the retired 4B room', async () => {
+    const res = await book(app, booking('rm-4b', '2026-11-03T10:00', '2026-11-03T11:00'));
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('ROOM_RETIRED');
   });
 
   it('allows bookings with a gap between them', async () => {
@@ -129,5 +165,35 @@ describe('GET /api/bookings (occurrences)', () => {
 
   it('requires roomId/from/to', async () => {
     await request(app).get('/api/bookings').expect(400);
+  });
+});
+
+describe('concurrent bookings across server instances sharing one database', () => {
+  it('confirms exactly one of several simultaneous requests for the same slot', async () => {
+    const db = createDatabase();
+    const serverA = createApp({ db });
+    const serverB = createApp({ db });
+    const slot = (title: string) => booking('rm-rainier', '2026-11-05T13:00', '2026-11-05T14:00', { title });
+    const results = await Promise.all([
+      book(serverA, slot('Customer call')),
+      book(serverB, slot('Interview loop')),
+      book(serverA, slot('Third request')),
+      book(serverB, slot('Fourth request')),
+    ]);
+    const statuses = results.map((r) => r.status).sort();
+    expect(statuses).toEqual([201, 409, 409, 409]);
+    const list = await request(serverA).get('/api/bookings').query({ roomId: 'rm-rainier', from: '2026-11-05', to: '2026-11-05' });
+    expect(list.body.occurrences).toHaveLength(1);
+  });
+
+  it('still confirms simultaneous requests for separate slots', async () => {
+    const db = createDatabase();
+    const serverA = createApp({ db });
+    const serverB = createApp({ db });
+    const results = await Promise.all([
+      book(serverA, booking('rm-rainier', '2026-11-05T10:00', '2026-11-05T11:00')),
+      book(serverB, booking('rm-rainier', '2026-11-05T14:00', '2026-11-05T15:00')),
+    ]);
+    expect(results.map((r) => r.status)).toEqual([201, 201]);
   });
 });

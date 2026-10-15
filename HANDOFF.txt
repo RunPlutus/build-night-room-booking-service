@@ -1,0 +1,17 @@
+Status
+Complete. All 24 public complaint acceptance checks pass.
+
+Completed changes
+- Overlap check now treats bookings as half-open intervals [start, end), so a meeting that starts exactly when the previous one ends is accepted (Fuji, Wed 7 Oct). Genuine overlaps are still rejected.
+- Recurring series now expand to every occurrence up to their until/count limit instead of stopping after a fixed number, so long-running weekly meetings are seen by conflict checks and calendars (Fuji, Tue 6 Oct).
+- Room 4B is recorded as retired with replacedBy rm-everest, per ADR-0004, so bookings stored under rm-4b count against Everest. No booking records were changed (Everest, Mon 5 Oct).
+- Conflict check and insert now run inside one database transaction, so simultaneous requests on any server yield one confirmation (Rainier, Thu 8 Oct). Availability excludes cancelled bookings and the per-server cache is keyed by a per-room revision that every create or cancel bumps, so a cancel on one server is visible on every server without delay (Kilimanjaro, Fri 9 Oct).
+
+Verification
+- npm run typecheck: exit 0
+- npm test: exit 0, 85 passed, 0 failed, 0 skipped (72 at start)
+- npm run replay: exit 0, 24 passed, 0 failed (8 at start)
+- npm run validate:data: exit 0, 0 errors, 0 warnings
+
+Remaining
+None.
