@@ -41,3 +41,16 @@ Times below are explicit UTC observations or converted Git commit timestamps. Ea
 - Remotes: origin is the personal fork; upstream is the original RunPlutus repository. No force-push, main-branch push, PR, organizer submission, or deployment.
 - Checks remain: 137/137 tests, 30/30 replay, clean typecheck and data validation. This receipt is a documentation-only follow-up to the verified source commit.
 - Remaining: finish the local demo video and save its delivery/verification milestone.
+
+## Final verification, restoration and delivery
+
+- Observation: 2026-10-15 02:33 UTC.
+- User-requested restoration: 44fadfa5fb0400941da11fd764102a4c6cfd5d3e changes only AGENTS.md and restores baseline blob 9a4dab0e5be7515b88e17c4ec224879fa509ef06. Previous blob 6f53bfb97323b613f78925c41eccf7ed5dff05ae came exactly from official event/ticket-2. Remote push and exact SHA were verified.
+- Functional checks: 137 tests, 30/30 replay, successful typecheck and data validation. Fresh replay after AGENTS restoration again exited 0 with 30/30.
+- Browser: localhost:4000 belongs to the original checkout, PID 44697, candidate/xuefeng at d97f509 plus local changes. A live replay there failed. Badges show previous replay outcomes. The separate candidate on localhost:4001 passed all six complaint cards through the normal UI. The original server and checkout were preserved.
+- Delivered video: ../output/playwright/room-booking-demo.mp4, 95.000 seconds, H.264/yuv420p, 1280x720, 25fps, 2,200,349 bytes. Full FFmpeg decode exited 0; sample frames verified. SHA256: 4111828ed65c6fa6066ae10c70dfff8a4dc3934e5221a279df8ba73acb2e2422.
+- Library upload succeeded: libfile_413d0289c4908191a34b1d3c1921f745, version 0. Download: https://chatgpt.com/api/library/files/libfile_413d0289c4908191a34b1d3c1921f745/download . The local Library version attribute was applied.
+- The delivered MP4 records live technical execution at e1fc3cf. It has English captions and no spoken narration. It does not claim contest compliance. An alternate expanded capture and historical script remain local evidence and are not suitable for submission; they are not the delivered file.
+- Compliance correction: earlier assistance exceeded the human-only boundary. Functional success, restoration of instructions, and this record do not erase that history. No further inspection or changes of the reserved implementation were made after the clarified restriction.
+- Commit granularity: initial fixes remain bundled in c93d07f, Summit is 88e34bd, restoration is 44fadfa. Partial restructuring was stopped before any branch/worktree/commit was created. Existing history is preserved; full splitting remains human work.
+- This final documentation update will be committed and pushed normally to the authorized fork, followed by an exact remote SHA check. No force push, organizer submission, merge or deployment is authorized by this entry.

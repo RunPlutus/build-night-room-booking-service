@@ -1,10 +1,10 @@
 Status
-Complete for the initial ticket and official TICKET-2, within the shared-Database execution model.
+Functional checks complete for the initial ticket and official TICKET-2, within the shared-Database execution model. This is not a claim of contest participation compliance: earlier assistance exceeded the human-only source boundary. The user-requested AGENTS.md restoration is recorded below and in MILESTONES.md.
 Candidate branch: candidate/xuefeng-verified-fix
 Base commit: d97f5090c0f5492b8f4062277f55efb62a6cdbe6
 Candidate checkout: /Users/frank/Documents/Codex/2026-10-14/task/room-booking-candidate
 Original checkout: /Users/frank/mygit/build-night-room-booking-service
-The original checkout, its prior HANDOFF.txt/verification files, and its concurrent AGENTS.md edit were left untouched. Work was performed in an independent local clone with a copied dependency directory. The user has authorized pushing this candidate branch; the latest push receipt is recorded in MILESTONES.md. No organizer submission, merge, or deployment was performed.
+The original checkout, its prior HANDOFF.txt/verification files, and all concurrent local edits were left untouched. Work was performed in an independent local clone with a copied dependency directory. The user has authorized pushing this candidate branch; the latest push receipt is recorded in MILESTONES.md. No organizer submission, merge, or deployment was performed.
 Initial verified checkpoint: c93d07fed02446bca9c0d4554f5fd85229cb45b1.
 Official follow-up: event/ticket-2 at 426db2bdfd666cf27fede3b313ad8eefbf3343bf. Its release diff was applied locally, preserving the initial fixes and the exact new Summit records and acceptance scenarios.
 
@@ -48,4 +48,7 @@ Evidence: ../verification/ticket-2-typecheck.log, ticket-2-final-test.log, ticke
 Remaining
 No supplied acceptance failures or execution blockers remain.
 The tested guarantee covers multiple apps and independent module instances sharing one embedded Database object. Its transaction queue has no rollback and direct query mutations bypass it; all supported booking API mutations now use the queue. This is not verification of separate production processes or a SQL deployment. A SQL adapter would need actual database transaction isolation and persisted room versions. Existing historical double-booked records remain preserved.
-The requested demo video is in progress separately from the verified code; its script and live recording console are saved in ../verification/. Video artifacts are excluded from Git. See MILESTONES.md for current push and recording status. Organizer submission remains unapproved.
+The verified technical demo is ../output/playwright/room-booking-demo.mp4: 95 seconds, H.264, 1280x720, English captions, actual API requests and test output. Library ID: libfile_413d0289c4908191a34b1d3c1921f745. It records source snapshot e1fc3cf before the documentation-only restoration. It does not establish contest compliance. An alternate expanded recording is not suitable for submission and is not the delivered video. Video artifacts are excluded from Git. Organizer submission remains unapproved.
+AGENTS.md was restored exactly to initial baseline d97f5090c0f5492b8f4062277f55efb62a6cdbe6 in commit 44fadfa5fb0400941da11fd764102a4c6cfd5d3e; its former contents came unchanged from official event/ticket-2. The remote SHA was verified.
+Browser verification: localhost:4000 serves the original checkout, candidate/xuefeng at d97f509 plus local changes; a live replay there still failed. localhost:4001 serves this candidate; all six complaint cards were run and showed works. A fresh npm run replay after AGENTS restoration passed 30/30, exit 0. The original server was left running.
+Earlier fixes remain bundled in c93d07f; Summit is separate in 88e34bd, and AGENTS restoration is separate in 44fadfa. No history was rewritten and no partial restructuring branch was created. Fully splitting the original bundle remains human work under the current boundary.
