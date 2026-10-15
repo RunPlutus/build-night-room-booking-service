@@ -21,31 +21,35 @@ export class BookingService {
   ) {}
 
   async create(input: BookingInput): Promise<BookingRecord> {
-    const room = await this.rooms.get(input.roomId);
-    if (!room) throw new NotFoundError(`Room ${input.roomId}`);
-    if (room.status === 'retired') throw new RoomRetiredError(room.id, room.replacedBy);
+    // Check and insert must share one transaction, or concurrent creates on any replica can both pass the check.
+    const record = await this.db.transaction(async (tx) => {
+      const room = await this.rooms.get(input.roomId, tx);
+      if (!room) throw new NotFoundError(`Room ${input.roomId}`);
+      if (room.status === 'retired') throw new RoomRetiredError(room.id, room.replacedBy);
 
-    const clashes = await this.conflicts.find(input);
-    if (clashes.length > 0) {
-      metrics.increment('booking_conflict');
-      throw new ConflictError(clashes);
-    }
+      const clashes = await this.conflicts.find(input, tx);
+      if (clashes.length > 0) {
+        metrics.increment('booking_conflict');
+        throw new ConflictError(clashes);
+      }
 
-    const record: BookingRecord = {
-      id: `bk_${crypto.randomUUID().slice(0, 8)}`,
-      roomId: room.id,
-      title: input.title,
-      organizer: input.organizer,
-      start: input.start,
-      end: input.end,
-      recurrence: input.recurrence ?? null,
-      status: 'confirmed',
-      createdAt: this.now().toISOString(),
-    };
-    await this.bookings.insert(record);
-    this.cache.invalidateRoom(await this.rooms.canonicalId(room.id));
+      const created: BookingRecord = {
+        id: `bk_${crypto.randomUUID().slice(0, 8)}`,
+        roomId: room.id,
+        title: input.title,
+        organizer: input.organizer,
+        start: input.start,
+        end: input.end,
+        recurrence: input.recurrence ?? null,
+        status: 'confirmed',
+        createdAt: this.now().toISOString(),
+      };
+      await this.bookings.insert(created, tx);
+      return created;
+    });
+    this.cache.invalidateRoom(await this.rooms.canonicalId(record.roomId));
     metrics.increment('booking_created');
-    events.track('booking_created', { roomId: room.id, recurring: !!record.recurrence });
+    events.track('booking_created', { roomId: record.roomId, recurring: !!record.recurrence });
     return record;
   }
 
