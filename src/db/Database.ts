@@ -22,6 +22,7 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 export class Database implements Queryable {
   private readonly tables: Tables;
   private txQueue: Promise<unknown> = Promise.resolve();
+  private readonly roomVersions = new Map<string, number>();
 
   constructor(seed: Seed, private readonly latencyMs = 2) {
     this.tables = {
@@ -33,6 +34,15 @@ export class Database implements Queryable {
   async query<T>(fn: (t: Tables) => T): Promise<T> {
     await sleep(this.latencyMs);
     return structuredClone(fn(this.tables));
+  }
+
+  /** Shared by all app/module instances using this embedded store. */
+  getRoomVersion(roomId: string): number {
+    return this.roomVersions.get(roomId) ?? 0;
+  }
+
+  advanceRoomVersion(roomId: string): void {
+    this.roomVersions.set(roomId, this.getRoomVersion(roomId) + 1);
   }
 
   async transaction<T>(fn: (tx: Queryable) => Promise<T>): Promise<T> {

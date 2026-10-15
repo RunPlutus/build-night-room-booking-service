@@ -25,6 +25,7 @@ export class AvailabilityService {
       return { ...hit, roomId };
     }
     metrics.increment('availability_cache_miss');
+    const version = this.cache.getVersion(canonical);
 
     const dayStart = parseDate(date);
     const day = { start: dayStart, end: dayStart + MINUTES_PER_DAY };
@@ -43,7 +44,7 @@ export class AvailabilityService {
       date,
       busy: sortSpans(busy).map((s) => ({ bookingId: s.bookingId, title: s.title, start: formatLocal(s.start), end: formatLocal(s.end) })),
     };
-    this.cache.set(value);
+    this.cache.set(value, version);
     return { ...value, roomId };
   }
 
