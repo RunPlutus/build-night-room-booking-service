@@ -24,7 +24,7 @@ export interface Schedulable {
  * every conflict check was the main cost in PERF-12; meetings further out than
  * this are rare and get caught when they're edited.
  */
-export const MAX_OCCURRENCES = 8;
+export const MAX_SERIES_DAYS = 366;
 
 export function stepMinutes(r: Recurrence): Minutes {
   return (r.freq === 'WEEKLY' ? MINUTES_PER_WEEK : MINUTES_PER_DAY) * (r.interval ?? 1);
@@ -48,10 +48,9 @@ export function occurrences(b: Schedulable): Span[] {
   if (!b.recurrence) return [{ start, end }];
   const step = stepMinutes(b.recurrence);
   const limit = seriesLimit(start, b.recurrence);
+  const hardStop = start + (MAX_SERIES_DAYS + 1) * MINUTES_PER_DAY;
   const out: Span[] = [];
-  for (let i = 0; i < MAX_OCCURRENCES; i++) {
-    const s = start + i * step;
-    if (s >= limit) break;
+  for (let s = start; s < limit && s < hardStop; s += step) {
     out.push({ start: s, end: s + (end - start) });
   }
   return out;

@@ -1,16 +1,17 @@
 Status
-Incomplete.
+Complete.
 
 Completed changes
 - Booking creation runs the conflict check and insert in one serializable database transaction, so simultaneous requests on different replicas cannot both be confirmed.
 - Cached availability days are validated against a fingerprint of the room's bookings in the shared database, so creates and cancellations show on every replica while unchanged repeated reads still use the cache; cancelled bookings no longer count as busy and remain available for audit.
-- Room 4B is marked retired with replacedBy rm-everest (FAC-88); no booking records were changed.
-- Ticket 2: conflicts and availability treat a divisible room and its parts (parentId) as shared space, so the whole of Summit and either half block each other while the two halves stay independent. Regression tests in tests/api/replicas.test.ts cover all of these changes using two app instances sharing one database.
+- Room 4B is marked retired with replacedBy rm-everest (FAC-88), with no booking records changed; Ticket 2: conflicts and availability treat a divisible room and its parts (parentId) as shared space, so the whole of Summit and either half block each other while the two halves stay independent. Regression tests in tests/api/replicas.test.ts cover these and the two changes above, using two app instances sharing one database.
+- Back-to-back meetings no longer count as clashing, and recurring series are expanded in full, so long-running meetings such as the Fuji standup and the Everest all-hands stay on calendars and block their slots. AI identified the causes of the back-to-back and recurring-series failures and wrote their regression tests (tests/api/complaints.test.ts); I implemented both fixes.
 
 Verification
 - npm run typecheck: exit 0.
-- npm test: exit 0; 81 passed, 0 failed, 0 skipped.
-- npm run replay: exit 1; 17 passed, 13 failed, 0 skipped (30 checks).
+- npm test: exit 0; 89 passed, 0 failed, 0 skipped.
+- npm run replay: exit 0; 30 passed, 0 failed, 0 skipped (30 checks).
+- npm run validate:data: exit 0; 0 errors, 0 warnings.
 
 Remaining
-Some ticket requirements still fail. The implementation is incomplete.
+None.
