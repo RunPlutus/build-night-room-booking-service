@@ -1,0 +1,16 @@
+Status: Complete
+
+Completed changes:
+- Retired `rm-4b` with `replacedBy: "rm-everest"` and resolved `parentId` ancestor/descendant room hierarchies in `RoomRepository.physicalRoomIds` so renamed rooms and divided spaces (`rm-summit`, `rm-summit-a`, `rm-summit-b`) enforce conflict and availability rules without blocking sibling halves.
+- Wrapped booking creation and cancellation in `db.transaction` in `BookingService` to serialize concurrent writes across server replicas.
+- Filtered cancelled bookings from `AvailabilityService`, versioned cached availability entries via `BookingRepository.roomVersion`, and invalidated overlapping room IDs on create and cancel so all replicas stay coherent while preserving cache hits.
+- Updated `overlaps` to use strict half-open interval comparison (`a.start < b.end && b.start < a.end`), raised `MAX_OCCURRENCES` to `367` to cover the full 366-day recurrence window, and added regression tests for all incidents.
+
+Verification:
+- `npm run typecheck`: exit code 0
+- `npm run validate:data`: exit code 0 (0 errors, 0 warnings)
+- `npm test`: exit code 0 (75 passed, 0 failed, 0 skipped)
+- `npm run replay`: exit code 0 (30 passed, 0 failed, 0 skipped)
+
+Remaining:
+None
