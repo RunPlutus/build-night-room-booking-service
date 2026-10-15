@@ -18,7 +18,7 @@ export class BookingQueryService {
 
   /** Occurrences in a room between two dates (inclusive). */
   async between(roomId: string, from: string, to: string): Promise<OccurrenceView[]> {
-    const ids = await this.rooms.physicalRoomIds(roomId);
+    const ids = await this.rooms.overlappingRoomIds(roomId);
     const lo = parseDate(from);
     const hi = parseDate(to) + MINUTES_PER_DAY;
     const out: OccurrenceView[] = [];
