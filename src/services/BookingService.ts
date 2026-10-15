@@ -30,7 +30,7 @@ export class BookingService {
     // before any of them inserts.
     const record = await this.db.transaction(async (tx) => {
       const clashes = await this.conflicts.find(input, tx);
-      if (clashes.length > 1) {
+      if (clashes.length > 0) {
         metrics.increment('booking_conflict');
         throw new ConflictError(clashes);
       }

@@ -22,6 +22,41 @@ export class RoomRepository {
     return resolveCanonical(id, new Map(rooms.map((r) => [r.id, r])));
   }
 
+  async conflictRoomIds(id: string, q: Queryable = this.db): Promise<string[]> {
+    const rooms = await q.query((t) => [...t.rooms.values()]);
+    const byId = new Map(rooms.map((r) => [r.id, r]));
+    const canon = (x: string) => resolveCanonical(x, byId);
+
+    // canonical child -> canonical parent
+    const parent = new Map<string, string>();
+    for (const r of rooms) if (r.parentId) parent.set(canon(r.id), canon(r.parentId));
+
+    const target = canon(id);
+    const related = new Set<string>([target]);
+
+    // ancestors
+    let p = parent.get(target);
+    for (let hops = 0; p && hops < 10; hops++) {
+      related.add(p);
+      p = parent.get(p);
+    }
+
+    // descendants (only of target, so siblings aren't included)
+    const desc = new Set<string>([target]);
+    for (let grew = true; grew; ) {
+      grew = false;
+      for (const [child, par] of parent) {
+        if (desc.has(par) && !desc.has(child)) {
+          desc.add(child);
+          grew = true;
+        }
+      }
+    }
+    desc.forEach((d) => related.add(d));
+
+    return rooms.filter((r) => related.has(canon(r.id))).map((r) => r.id);
+  }
+
   /** Every room id that refers to the same physical room as `id`. */
   async physicalRoomIds(id: string, q: Queryable = this.db): Promise<string[]> {
     const rooms = await q.query((t) => [...t.rooms.values()]);

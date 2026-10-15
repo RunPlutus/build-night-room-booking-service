@@ -49,7 +49,7 @@ export function occurrences(b: Schedulable): Span[] {
   const step = stepMinutes(b.recurrence);
   const limit = seriesLimit(start, b.recurrence);
   const out: Span[] = [];
-  for (let i = 0; i < MAX_OCCURRENCES; i++) {
+  for (let i = 0; ; i++) {
     const s = start + i * step;
     if (s >= limit) break;
     out.push({ start: s, end: s + (end - start) });
