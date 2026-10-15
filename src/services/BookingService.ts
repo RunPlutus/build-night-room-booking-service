@@ -34,7 +34,7 @@ export class BookingService {
 
       // The embedded transaction is a queue without rollback. Resolve all
       // fallible reads before its single write, then invalidate synchronously.
-      const canonical = await this.rooms.canonicalId(room.id, tx);
+      const affectedRooms = await this.rooms.overlappingRoomIds(room.id, tx);
       const booking: BookingRecord = {
         id: `bk_${crypto.randomUUID().slice(0, 8)}`,
         roomId: room.id,
@@ -47,7 +47,7 @@ export class BookingService {
         createdAt: this.now().toISOString(),
       };
       await this.bookings.insert(booking, tx);
-      this.cache.invalidateRoom(canonical);
+      for (const roomId of affectedRooms) this.cache.invalidateRoom(roomId);
       return booking;
     });
     metrics.increment('booking_created');
@@ -67,9 +67,9 @@ export class BookingService {
       const existing = await this.bookings.get(id, tx);
       if (!existing) throw new NotFoundError(`Booking ${id}`);
       if (existing.status === 'cancelled') return { booking: existing, changed: false };
-      const canonical = await this.rooms.canonicalId(existing.roomId, tx);
+      const affectedRooms = await this.rooms.overlappingRoomIds(existing.roomId, tx);
       const updated = await this.bookings.updateStatus(id, 'cancelled', this.now().toISOString(), tx);
-      this.cache.invalidateRoom(canonical);
+      for (const roomId of affectedRooms) this.cache.invalidateRoom(roomId);
       return { booking: updated!, changed: true };
     });
     if (changed) {

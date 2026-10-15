@@ -1,14 +1,16 @@
 Status
-Complete for the supplied challenge and shared-Database execution model.
+Complete for the initial ticket and official TICKET-2, within the shared-Database execution model.
 Candidate branch: candidate/xuefeng-verified-fix
 Base commit: d97f5090c0f5492b8f4062277f55efb62a6cdbe6
 Candidate checkout: /Users/frank/Documents/Codex/2026-10-14/task/room-booking-candidate
 Original checkout: /Users/frank/mygit/build-night-room-booking-service
-The original checkout, its prior HANDOFF.txt/verification files, and its concurrent AGENTS.md edit were left untouched. Work was performed in an independent local clone with a copied dependency directory. No push, submission, merge, or deployment was performed.
+The original checkout, its prior HANDOFF.txt/verification files, and its concurrent AGENTS.md edit were left untouched. Work was performed in an independent local clone with a copied dependency directory. The user has authorized pushing this candidate branch; the latest push receipt is recorded in MILESTONES.md. No organizer submission, merge, or deployment was performed.
+Initial verified checkpoint: c93d07fed02446bca9c0d4554f5fd85229cb45b1.
+Official follow-up: event/ticket-2 at 426db2bdfd666cf27fede3b313ad8eefbf3343bf. Its release diff was applied locally, preserving the initial fixes and the exact new Summit records and acceptance scenarios.
 
 Completed changes
 - Corrected half-open interval comparisons and removed the eight-occurrence truncation. All bounded occurrences now participate in conflicts and calendar results. Added finite expansion guards and positive integer count validation while retaining the 366-day policy.
-- Marked rm-4b retired and linked it to rm-everest. Historical booking IDs and room references remain intact and now resolve to the same physical room.
+- Marked rm-4b retired and linked it to rm-everest. Added parent/part overlap resolution for Summit: containing rooms and their parts block each other, while sibling halves stay independent. Conflicts, availability, range listings and invalidation share that rule. Historical booking IDs and room references remain intact.
 - Put create conflict checks, insertions, and cancellations on the shared Database transaction queue. Validation and fallible reads precede each single write. Concurrent requests have one winner, and repeated cancellations preserve the first audit timestamp.
 - Excluded cancelled records from availability while preserving audit lookups. Database-owned room versions invalidate every app's cache, including independently loaded modules. Version checks prevent stale reads from refilling the cache after a mutation; unchanged reads and unrelated-room entries still reuse cached results.
 
@@ -29,16 +31,21 @@ npm test -- tests/unit/availability-regressions.test.ts: exit 1; 3 passed/7 fail
 npm test -- tests/unit/booking-validation-regressions.test.ts: exit 1; 1 passed/9 failed/0 skipped.
 An intermediate replay passed 22/24 and exposed module-isolated cache state. Two additional module-isolation regressions then failed before moving version state onto the Database object: 10 passed/2 failed/0 skipped.
 
-Final commands on the completed source:
+Initial-ticket checkpoint: typecheck exit 0, npm test exit 0 (117 passed), replay exit 0 (24/24), data validation exit 0 (0 errors/0 warnings).
+Follow-up baseline after applying the official release, before divider implementation: npm run replay exit 1 (26 passed/4 failed of 30).
+Follow-up regressions before fixes: npm test -- tests/api/partition-regressions.test.ts exit 1 (3 passed/12 failed); npm test -- tests/unit/partition-cache-regressions.test.ts exit 1 (0 passed/5 failed).
+After fixes, both follow-up test files together: exit 0, 20 passed/0 failed/0 skipped.
+
+Final commands covering both tickets:
 npm run typecheck: exit 0; 0 compiler diagnostics.
-npm test: exit 0; 117 passed/0 failed/0 skipped across 9 test files (66 supplied tests plus 51 added regressions).
-npm run replay: exit 0; 24 passed/0 failed/0 skipped.
+npm test: exit 0; 137 passed/0 failed/0 skipped across 11 test files (66 supplied tests plus 71 added regressions).
+npm run replay: exit 0; 30 passed/0 failed/0 skipped, including all six official divider checks.
 npm run validate:data: exit 0; 0 errors/0 warnings. The tsx CLI required approved local IPC access after an initial sandbox EPERM.
 git diff --check: exit 0; no whitespace errors.
-Supplied tests, replay scripts, booking history, package lockfile, and Facilities policies were not changed. Independent read-only review found no additional scoped correctness gaps.
-Evidence: ../verification/final-typecheck.log, final-test.log, final-replay.log, final-validate-data.log, plus the before-fix regression logs.
+Supplied tests, replay runner, booking history, package lockfile, and Facilities policies were not changed. The organizer's expanded public scenarios are retained exactly. Independent read-only review found no additional scoped correctness gaps.
+Evidence: ../verification/ticket-2-typecheck.log, ticket-2-final-test.log, ticket-2-after-replay.log, ticket-2-validate-data.log, plus initial final-*.log and before-fix regression logs.
 
 Remaining
 No supplied acceptance failures or execution blockers remain.
 The tested guarantee covers multiple apps and independent module instances sharing one embedded Database object. Its transaction queue has no rollback and direct query mutations bypass it; all supported booking API mutations now use the queue. This is not verification of separate production processes or a SQL deployment. A SQL adapter would need actual database transaction isolation and persisted room versions. Existing historical double-booked records remain preserved.
-The candidate commit and patch are local only. Publishing or submitting requires user approval.
+The requested demo video is in progress separately from the verified code; its script and live recording console are saved in ../verification/. Video artifacts are excluded from Git. See MILESTONES.md for current push and recording status. Organizer submission remains unapproved.

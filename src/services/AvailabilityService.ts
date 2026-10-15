@@ -29,7 +29,7 @@ export class AvailabilityService {
 
     const dayStart = parseDate(date);
     const day = { start: dayStart, end: dayStart + MINUTES_PER_DAY };
-    const ids = await this.rooms.physicalRoomIds(canonical);
+    const ids = await this.rooms.overlappingRoomIds(canonical);
     const all = await this.bookings.findByRooms(ids);
 
     const busy = [];
