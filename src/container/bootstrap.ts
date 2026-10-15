@@ -27,7 +27,7 @@ export function buildContainer(opts: AppOptions = {}): Container {
   c.register(TOKENS.Database, () => opts.db ?? createDatabase());
   c.register(TOKENS.RoomRepository, (c) => new RoomRepository(c.resolve(TOKENS.Database)));
   c.register(TOKENS.BookingRepository, (c) => new BookingRepository(c.resolve(TOKENS.Database)));
-  c.register(TOKENS.AvailabilityCache, (c) => new AvailabilityCache(c.resolve(TOKENS.Config).availabilityCacheTtlSeconds * 1000));
+  c.register(TOKENS.AvailabilityCache, (c) => new AvailabilityCache(c.resolve(TOKENS.Config).availabilityCacheTtlSeconds * 1000, Date.now, c.resolve(TOKENS.Database)));
   c.register(
     TOKENS.ConflictService,
     (c) => new ConflictService(c.resolve(TOKENS.Database), c.resolve(TOKENS.RoomRepository), c.resolve(TOKENS.BookingRepository)),

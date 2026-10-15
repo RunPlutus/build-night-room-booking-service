@@ -67,7 +67,9 @@ export class BookingService {
       const existing = await this.bookings.get(id, tx);
       if (!existing) throw new NotFoundError(`Booking ${id}`);
       if (existing.status === 'cancelled') return { booking: existing, changed: false };
+      const canonical = await this.rooms.canonicalId(existing.roomId, tx);
       const updated = await this.bookings.updateStatus(id, 'cancelled', this.now().toISOString(), tx);
+      this.cache.invalidateRoom(canonical);
       return { booking: updated!, changed: true };
     });
     if (changed) {
