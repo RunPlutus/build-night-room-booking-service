@@ -105,8 +105,9 @@
         "vc",
         "whiteboard"
       ],
-      "status": "active",
-      "createdAt": "2023-01-09T00:00:00.000Z"
+      "status": "retired",
+      "createdAt": "2023-01-09T00:00:00.000Z",
+      "replacedBy": "rm-everest"
     },
     {
       "id": "rm-everest",

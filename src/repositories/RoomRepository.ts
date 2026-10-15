@@ -29,6 +29,31 @@ export class RoomRepository {
     const canonical = resolveCanonical(id, byId);
     return rooms.filter((r) => resolveCanonical(r.id, byId) === canonical).map((r) => r.id);
   }
+
+  /**
+   * Every room id whose bookings occupy space shared with `id`: the same
+   * physical room, rooms that contain it, and rooms it contains (parentId).
+   * Siblings that only share a parent do not overlap, so they are excluded.
+   */
+  async occupancyRoomIds(id: string, q: Queryable = this.db): Promise<string[]> {
+    const rooms = await q.query((t) => [...t.rooms.values()]);
+    const byId = new Map(rooms.map((r) => [r.id, r]));
+    const parentOf = new Map<string, string>();
+    for (const r of rooms) if (r.parentId) parentOf.set(resolveCanonical(r.id, byId), resolveCanonical(r.parentId, byId));
+    const ancestors = (start: string) => {
+      const seen = new Set<string>();
+      for (let cur: string | undefined = start; cur && !seen.has(cur); cur = parentOf.get(cur)) seen.add(cur);
+      return seen;
+    };
+    const target = resolveCanonical(id, byId);
+    const above = ancestors(target);
+    return rooms
+      .filter((r) => {
+        const c = resolveCanonical(r.id, byId);
+        return above.has(c) || ancestors(c).has(target);
+      })
+      .map((r) => r.id);
+  }
 }
 
 export function resolveCanonical(id: string, byId: Map<string, RoomRecord>): string {

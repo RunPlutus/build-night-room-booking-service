@@ -1,0 +1,18 @@
+Status
+Incomplete.
+
+Completed changes
+- Booking creation runs the room check, conflict check and insert in one database transaction, so concurrent creates on instances sharing a database cannot both confirm the same space.
+- Summit divider (ticket 2): a whole-Summit booking conflicts with either half and vice versa; Summit A and Summit B stay independent.
+- Availability shows only confirmed bookings, including whole/half Summit occupancy, and its cache is tagged with a database-wide occupancy revision, so a completed create or cancellation is visible on every instance while unchanged reads stay cached.
+- 4B is retired with replacedBy rm-everest (ADR-0004): historical 4B bookings count for Everest, direct 4B bookings now return ROOM_RETIRED, and no booking records were changed. Each change has focused regression tests.
+
+Verification
+- npm ci: exit 0. npm reported an audit warning (11 vulnerabilities: 6 moderate, 3 high, 2 critical); untriaged, not a security assessment.
+- npm run typecheck: exit 0.
+- npm test: exit 0; 8 files, 92 passed, 0 failed, 0 skipped.
+- npm run replay: exit 1; 17 passed, 13 failed, 0 skipped (30 checks).
+- npm run validate:data: exit 0; 0 errors, 0 warnings.
+
+Remaining
+Some ticket requirements still fail. The implementation is incomplete.

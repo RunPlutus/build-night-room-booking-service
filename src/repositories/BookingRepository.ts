@@ -17,6 +17,7 @@ export class BookingRepository {
   insert(b: BookingRecord, q: Queryable = this.db): Promise<BookingRecord> {
     return q.query((t) => {
       t.bookings.set(b.id, structuredClone(b));
+      if (b.status === 'confirmed') this.db.markOccupancyChanged();
       return b;
     });
   }
@@ -25,10 +26,17 @@ export class BookingRepository {
     return q.query((t) => {
       const b = t.bookings.get(id);
       if (!b) return undefined;
+      const changed = b.status !== status;
       b.status = status;
       if (status === 'cancelled') b.cancelledAt = at;
+      if (changed) this.db.markOccupancyChanged();
       return b;
     });
+  }
+
+  /** Read before loading bookings, so a snapshot is never tagged with a revision newer than its data. */
+  occupancyRevision(): number {
+    return this.db.occupancyRevision();
   }
 
   count(q: Queryable = this.db): Promise<number> {

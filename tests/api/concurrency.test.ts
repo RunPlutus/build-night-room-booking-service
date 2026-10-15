@@ -133,4 +133,25 @@ describe('concurrent creates across instances sharing one database', () => {
     const later = await within(create(b, booking(ROOM, '2027-02-10T15:00', '2027-02-10T16:00')), 'the later create');
     expect(later.status).toBe(201);
   });
+
+  it('lets only one of a whole-Summit create and a Summit B create win when they overlap in time', async () => {
+    const { db, a, b } = twoReplicas();
+    const start = '2027-03-03T14:00';
+    const gate = holdFirstBookingsRead(db);
+    try {
+      const whole = create(a, booking('rm-summit', start, '2027-03-03T15:00', { title: 'Whole-room offsite' }));
+      await within(gate.firstHeld, 'the whole-room create to read bookings');
+      const half = create(b, booking('rm-summit-b', start, '2027-03-03T15:00', { title: 'Half-room interview' }));
+      const results = await within(Promise.all([whole, half]), 'both creates to respond');
+
+      expect(results.map((r) => r.status).sort()).toEqual([201, 409]);
+      expect(results.find((r) => r.status === 409)?.body.error.code).toBe('CONFLICT');
+    } finally {
+      gate.restore();
+    }
+    const stored = await db.query(
+      (t) => [...t.bookings.values()].filter((x) => ['rm-summit', 'rm-summit-b'].includes(x.roomId) && x.start === start && x.status === 'confirmed').length,
+    );
+    expect(stored).toBe(1);
+  });
 });

@@ -20,6 +20,7 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 export class Database implements Queryable {
   private readonly tables: Tables;
   private txQueue: Promise<unknown> = Promise.resolve();
+  private occupancy = 0;
 
   constructor(seed: Seed, private readonly latencyMs = 2) {
     this.tables = {
@@ -31,6 +32,16 @@ export class Database implements Queryable {
   async query<T>(fn: (t: Tables) => T): Promise<T> {
     await sleep(this.latencyMs);
     return structuredClone(fn(this.tables));
+  }
+
+  /** Revision of which bookings occupy rooms. Shared by every app instance using this Database. */
+  occupancyRevision(): number {
+    return this.occupancy;
+  }
+
+  /** Must be called inside the query callback that performs the write, so the bump is part of that write. */
+  markOccupancyChanged(): void {
+    this.occupancy += 1;
   }
 
   async transaction<T>(fn: (tx: Queryable) => Promise<T>): Promise<T> {
