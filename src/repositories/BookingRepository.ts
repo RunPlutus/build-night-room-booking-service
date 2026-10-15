@@ -14,6 +14,22 @@ export class BookingRepository {
     return q.query((t) => [...t.bookings.values()].filter((b) => ids.has(b.roomId)));
   }
 
+  /**
+   * Cheap fingerprint of the bookings in the given rooms. It changes whenever a
+   * booking is created or its status changes, so caches on any replica can tell
+   * whether their copy is still current without re-expanding every series.
+   */
+  revision(roomIds: string[], q: Queryable = this.db): Promise<string> {
+    const ids = new Set(roomIds);
+    return q.query((t) =>
+      [...t.bookings.values()]
+        .filter((b) => ids.has(b.roomId))
+        .map((b) => `${b.id}:${b.status}`)
+        .sort()
+        .join(','),
+    );
+  }
+
   insert(b: BookingRecord, q: Queryable = this.db): Promise<BookingRecord> {
     return q.query((t) => {
       t.bookings.set(b.id, structuredClone(b));
