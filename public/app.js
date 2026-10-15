@@ -41,7 +41,20 @@ function describeResponse(r) {
 /* ---------- rooms ---------- */
 
 function orderRooms(rooms) {
-  return [...rooms].sort((a, b) => a.floor - b.floor || a.name.localeCompare(b.name)).map((room) => ({ ...room, depth: 0 }));
+  const byParent = new Map();
+  for (const r of rooms) {
+    const p = r.parentId ?? '';
+    if (!byParent.has(p)) byParent.set(p, []);
+    byParent.get(p).push(r);
+  }
+  const ids = new Set(rooms.map((r) => r.id));
+  const top = rooms.filter((r) => !r.parentId || !ids.has(r.parentId)).sort((a, b) => a.floor - b.floor || a.name.localeCompare(b.name));
+  const out = [];
+  for (const r of top) {
+    out.push({ ...r, depth: 0 });
+    for (const c of (byParent.get(r.id) ?? []).sort((a, b) => a.name.localeCompare(b.name))) out.push({ ...c, depth: 1 });
+  }
+  return out;
 }
 
 /* ---------- calendar ---------- */
