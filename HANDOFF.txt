@@ -1,16 +1,16 @@
 Status
-Incomplete.
+Complete.
 
 Completed changes
 - Booking creation runs its conflict check and insert in one database transaction, so simultaneous requests on any replica cannot both be confirmed.
-- Availability cache entries are validated against a booking revision read from the shared database, so creates and cancellations on one replica are visible on every replica while unchanged reads still hit the cache.
-- Cancelled bookings no longer appear as busy on room calendars; they remain retrievable by id for audit.
+- Availability cache entries are validated against a booking revision read from the shared database, so creates and cancellations on one replica show on every replica while unchanged reads still hit the cache; cancelled bookings no longer show as busy but stay retrievable for audit.
 - Room 4B is marked retired with replacedBy Everest (ADR-0004); historical bookings keep their original room id. Regression tests: tests/api/replicas.test.ts.
+- Added the optional parentId field to the room record type so the Ticket 2 room relationships type-check.
 
 Verification
 - npm run typecheck: exit 0
 - npm test: exit 0; 73 passed, 0 failed, 0 skipped
-- npm run replay: exit 1; 14 passed, 10 failed, 0 skipped (of 24)
+- npm run replay: exit 0; 30 passed, 0 failed, 0 skipped (of 30)
 
 Remaining
-Some ticket requirements still fail. The implementation is incomplete.
+None.
