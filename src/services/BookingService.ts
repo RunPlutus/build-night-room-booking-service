@@ -21,7 +21,7 @@ export class BookingService {
   ) {}
 
   async create(input: BookingInput): Promise<BookingRecord> {
-    const { record, canonicalRoomId } = await this.db.transaction(async (tx) => {
+    const { record, affectedRoomIds } = await this.db.transaction(async (tx) => {
       const room = await this.rooms.get(input.roomId, tx);
       if (!room) throw new NotFoundError(`Room ${input.roomId}`);
       if (room.status === 'retired') throw new RoomRetiredError(room.id, room.replacedBy);
@@ -44,10 +44,12 @@ export class BookingService {
         createdAt: this.now().toISOString(),
       };
       await this.bookings.insert(created, tx);
-      const canonicalRoomId = await this.rooms.canonicalId(room.id, tx);
-      return { record: created, canonicalRoomId };
+      const affectedRoomIds = await this.rooms.physicalRoomIds(room.id, tx);
+      return { record: created, affectedRoomIds };
     });
-    this.cache.invalidateRoom(canonicalRoomId);
+    for (const id of affectedRoomIds) {
+      this.cache.invalidateRoom(id);
+    }
     metrics.increment('booking_created');
     events.track('booking_created', { roomId: record.roomId, recurring: !!record.recurrence });
     return record;
@@ -61,18 +63,20 @@ export class BookingService {
 
   /** Cancelling is idempotent. Cancelled bookings are kept for audit. */
   async cancel(id: string): Promise<BookingRecord> {
-    const { record, cancelled, canonicalRoomId } = await this.db.transaction(async (tx) => {
+    const { record, cancelled, affectedRoomIds } = await this.db.transaction(async (tx) => {
       const existing = await this.bookings.get(id, tx);
       if (!existing) throw new NotFoundError(`Booking ${id}`);
       if (existing.status === 'cancelled') {
-        return { record: existing, cancelled: false, canonicalRoomId: '' };
+        return { record: existing, cancelled: false, affectedRoomIds: [] as string[] };
       }
       const updated = await this.bookings.updateStatus(id, 'cancelled', this.now().toISOString(), tx);
-      const canonicalRoomId = await this.rooms.canonicalId(existing.roomId, tx);
-      return { record: updated!, cancelled: true, canonicalRoomId };
+      const affectedRoomIds = await this.rooms.physicalRoomIds(existing.roomId, tx);
+      return { record: updated!, cancelled: true, affectedRoomIds };
     });
     if (cancelled) {
-      this.cache.invalidateRoom(canonicalRoomId);
+      for (const roomId of affectedRoomIds) {
+        this.cache.invalidateRoom(roomId);
+      }
       metrics.increment('booking_cancelled');
       events.track('booking_cancelled', { roomId: record.roomId });
     }

@@ -114,6 +114,25 @@ describe('availability', () => {
     expect(afterRebookB.body.busy.map((b: any) => b.title)).toEqual(['Team workshop']);
   });
 
+  it('reflects availability across parent and divided room halves', async () => {
+    // Prime caches for Summit, Summit A, and Summit B
+    expect((await availability(app, 'rm-summit', '2026-11-12')).body.busy).toEqual([]);
+    expect((await availability(app, 'rm-summit-a', '2026-11-12')).body.busy).toEqual([]);
+    expect((await availability(app, 'rm-summit-b', '2026-11-12')).body.busy).toEqual([]);
+
+    // Booking Summit A marks Summit A and whole Summit busy, while Summit B stays free
+    const halfA = await book(app, booking('rm-summit-a', '2026-11-12T11:00', '2026-11-12T12:00', { title: 'Workshop A' }));
+    expect(halfA.status).toBe(201);
+    expect((await availability(app, 'rm-summit', '2026-11-12')).body.busy.map((b: any) => b.title)).toEqual(['Workshop A']);
+    expect((await availability(app, 'rm-summit-a', '2026-11-12')).body.busy.map((b: any) => b.title)).toEqual(['Workshop A']);
+    expect((await availability(app, 'rm-summit-b', '2026-11-12')).body.busy).toEqual([]);
+
+    // Cancelling Summit A frees both Summit A and whole Summit
+    await request(app).delete(`/api/bookings/${halfA.body.id}`).expect(204);
+    expect((await availability(app, 'rm-summit', '2026-11-12')).body.busy).toEqual([]);
+    expect((await availability(app, 'rm-summit-a', '2026-11-12')).body.busy).toEqual([]);
+  });
+
   it('validates the date', async () => {
     await availability(app, 'rm-fuji', 'tomorrow').expect(400);
   });

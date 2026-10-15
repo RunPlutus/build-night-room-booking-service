@@ -115,6 +115,33 @@ describe('POST /api/bookings', () => {
     expect(confirmed).toHaveLength(1);
   });
 
+  it('enforces parent/child divider rules for Summit and its halves (including cross-replica race)', async () => {
+    const { createDatabase } = await import('../../src/db');
+    const { createApp } = await import('../../src/app');
+    const db = createDatabase();
+    const appA = createApp({ db });
+    const appB = createApp({ db });
+
+    // Whole room 10:00–11:00 blocks Summit A overlapping at 10:30–11:30
+    expect((await book(appA, booking('rm-summit', '2026-11-12T10:00', '2026-11-12T11:00', { title: 'All-hands rehearsal' }))).status).toBe(201);
+    expect((await book(appA, booking('rm-summit-a', '2026-11-12T10:30', '2026-11-12T11:30', { title: 'Workshop A' }))).status).toBe(409);
+
+    // Back-to-back at 11:00–12:00 works, and both halves can be booked simultaneously
+    expect((await book(appA, booking('rm-summit-a', '2026-11-12T11:00', '2026-11-12T12:00', { title: 'Workshop A' }))).status).toBe(201);
+    expect((await book(appA, booking('rm-summit-b', '2026-11-12T11:00', '2026-11-12T12:00', { title: 'Workshop B' }))).status).toBe(201);
+
+    // Either half booked blocks the whole room
+    expect((await book(appA, booking('rm-summit', '2026-11-12T11:30', '2026-11-12T12:30', { title: 'Town hall' }))).status).toBe(409);
+
+    // Concurrent race between whole room (server A) and Summit B (server B)
+    const race = await Promise.all([
+      book(appA, booking('rm-summit', '2026-11-12T14:00', '2026-11-12T15:00', { title: 'Whole-room offsite' })),
+      book(appB, booking('rm-summit-b', '2026-11-12T14:00', '2026-11-12T15:00', { title: 'Half-room interview' })),
+    ]);
+    expect(race.filter((r) => r.status === 201)).toHaveLength(1);
+    expect(race.filter((r) => r.status === 409)).toHaveLength(1);
+  });
+
   it('refuses bookings in a retired room', async () => {
     const res = await book(app, booking('rm-atlas', '2026-11-03T10:00', '2026-11-03T11:00'));
     expect(res.status).toBe(400);

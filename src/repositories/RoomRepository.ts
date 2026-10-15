@@ -22,12 +22,33 @@ export class RoomRepository {
     return resolveCanonical(id, new Map(rooms.map((r) => [r.id, r])));
   }
 
-  /** Every room id that refers to the same physical room as `id`. */
+  /** Every room id whose physical space overlaps with `id` (via replacedBy or parentId). */
   async physicalRoomIds(id: string, q: Queryable = this.db): Promise<string[]> {
     const rooms = await q.query((t) => [...t.rooms.values()]);
     const byId = new Map(rooms.map((r) => [r.id, r]));
-    const canonical = resolveCanonical(id, byId);
-    return rooms.filter((r) => resolveCanonical(r.id, byId) === canonical).map((r) => r.id);
+    const parents = new Map<string, string>();
+    for (const r of rooms) {
+      if (r.parentId) {
+        parents.set(resolveCanonical(r.id, byId), resolveCanonical(r.parentId, byId));
+      }
+    }
+    const ancestors = (roomId: string): Set<string> => {
+      const result = new Set<string>();
+      let cur: string | undefined = resolveCanonical(roomId, byId);
+      while (cur && !result.has(cur)) {
+        result.add(cur);
+        cur = parents.get(cur);
+      }
+      return result;
+    };
+    const targetCanonical = resolveCanonical(id, byId);
+    const targetAncestors = ancestors(targetCanonical);
+    return rooms
+      .filter((r) => {
+        const c = resolveCanonical(r.id, byId);
+        return targetAncestors.has(c) || ancestors(c).has(targetCanonical);
+      })
+      .map((r) => r.id);
   }
 }
 
