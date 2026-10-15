@@ -33,6 +33,7 @@ export class AvailabilityService {
 
     const busy = [];
     for (const b of all) {
+      if (b.status !== 'confirmed') continue;
       for (const o of occurrences(b)) {
         if (o.start < day.end && o.end > day.start) busy.push({ ...o, bookingId: b.id, title: b.title });
       }
