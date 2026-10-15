@@ -105,8 +105,9 @@
         "vc",
         "whiteboard"
       ],
-      "status": "active",
-      "createdAt": "2023-01-09T00:00:00.000Z"
+      "status": "retired",
+      "createdAt": "2023-01-09T00:00:00.000Z",
+      "replacedBy": "rm-everest"
     },
     {
       "id": "rm-everest",
@@ -233,6 +234,31 @@
       ],
       "status": "active",
       "createdAt": "2024-08-19T00:00:00.000Z"
+    },
+    {
+      "id": "rm-summit-a",
+      "name": "Summit A",
+      "floor": 6,
+      "capacity": 14,
+      "features": [
+        "display"
+      ],
+      "status": "active",
+      "parentId": "rm-summit",
+      "createdAt": "2026-10-19T00:00:00.000Z"
+    },
+    {
+      "id": "rm-summit-b",
+      "name": "Summit B",
+      "floor": 6,
+      "capacity": 14,
+      "features": [
+        "display",
+        "vc"
+      ],
+      "status": "active",
+      "parentId": "rm-summit",
+      "createdAt": "2026-10-19T00:00:00.000Z"
     }
   ]
 }

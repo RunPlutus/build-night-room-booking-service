@@ -25,14 +25,16 @@ export class AvailabilityService {
       return { ...hit, roomId };
     }
     metrics.increment('availability_cache_miss');
+    const version = this.cache.getVersion(canonical);
 
     const dayStart = parseDate(date);
     const day = { start: dayStart, end: dayStart + MINUTES_PER_DAY };
-    const ids = await this.rooms.physicalRoomIds(canonical);
+    const ids = await this.rooms.overlappingRoomIds(canonical);
     const all = await this.bookings.findByRooms(ids);
 
     const busy = [];
     for (const b of all) {
+      if (b.status !== 'confirmed') continue;
       for (const o of occurrences(b)) {
         if (o.start < day.end && o.end > day.start) busy.push({ ...o, bookingId: b.id, title: b.title });
       }
@@ -42,7 +44,7 @@ export class AvailabilityService {
       date,
       busy: sortSpans(busy).map((s) => ({ bookingId: s.bookingId, title: s.title, start: formatLocal(s.start), end: formatLocal(s.end) })),
     };
-    this.cache.set(value);
+    this.cache.set(value, version);
     return { ...value, roomId };
   }
 
