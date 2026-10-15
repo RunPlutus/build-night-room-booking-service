@@ -35,16 +35,28 @@ describe('POST /api/bookings', () => {
     expect(res.status).toBe(201);
   });
 
+  it('allows back-to-back bookings without modifying endpoints', async () => {
+    const first = await book(app, booking('rm-fuji', '2026-11-03T14:00', '2026-11-03T15:00', { title: '1:1 Sam / Alex' }));
+    expect(first.status).toBe(201);
+    const second = await book(app, booking('rm-fuji', '2026-11-03T15:00', '2026-11-03T16:00', { title: 'Design sync' }));
+    expect(second.status).toBe(201);
+    expect(second.body).toMatchObject({ start: '2026-11-03T15:00', end: '2026-11-03T16:00' });
+  });
+
   it('allows the same time in a different room', async () => {
     await book(app, booking('rm-fuji', '2026-11-03T14:00', '2026-11-03T15:00'));
     const res = await book(app, booking('rm-rainier', '2026-11-03T14:00', '2026-11-03T15:00'));
     expect(res.status).toBe(201);
   });
 
-  it('detects a clash with a seeded recurring meeting (Platform standup, week 2)', async () => {
+  it('detects a clash with a seeded recurring meeting (Platform standup, week 2 and later weeks)', async () => {
     const res = await book(app, booking('rm-fuji', '2026-07-14T09:30', '2026-07-14T10:00'));
     expect(res.status).toBe(409);
     expect(res.body.error.details[0].title).toBe('Platform standup');
+
+    const laterRes = await book(app, booking('rm-fuji', '2026-10-20T09:30', '2026-10-20T10:00'));
+    expect(laterRes.status).toBe(409);
+    expect(laterRes.body.error.details[0].title).toBe('Platform standup');
   });
 
   it('detects a clash between a new weekly series and an existing one-off', async () => {
@@ -67,7 +79,7 @@ describe('POST /api/bookings', () => {
     expect(retiredRes.status).toBe(400);
     expect(retiredRes.body.error.code).toBe('ROOM_RETIRED');
 
-    const conflictRes = await book(app, booking('rm-everest', '2026-03-09T10:00', '2026-03-09T11:00'));
+    const conflictRes = await book(app, booking('rm-everest', '2026-11-02T10:00', '2026-11-02T11:00'));
     expect(conflictRes.status).toBe(409);
     expect(conflictRes.body.error.details[0].title).toBe('Monday all-hands');
   });

@@ -28,6 +28,10 @@ describe('overlaps', () => {
   it('separate spans do not overlap', () => {
     expect(overlaps(span('2026-11-03T10:00', '2026-11-03T11:00'), span('2026-11-03T13:00', '2026-11-03T14:00'))).toBe(false);
   });
+  it('adjacent spans do not overlap in either argument order', () => {
+    expect(overlaps(span('2026-11-03T14:00', '2026-11-03T15:00'), span('2026-11-03T15:00', '2026-11-03T16:00'))).toBe(false);
+    expect(overlaps(span('2026-11-03T15:00', '2026-11-03T16:00'), span('2026-11-03T14:00', '2026-11-03T15:00'))).toBe(false);
+  });
 });
 
 describe('recurrence', () => {
@@ -37,6 +41,15 @@ describe('recurrence', () => {
   it('weekly with count', () => {
     const occ = occurrences({ start: '2026-11-03T10:00', end: '2026-11-03T11:00', recurrence: { freq: 'WEEKLY', count: 3 } });
     expect(occ.map((o) => formatLocal(o.start))).toEqual(['2026-11-03T10:00', '2026-11-10T10:00', '2026-11-17T10:00']);
+  });
+  it('expands weekly and daily series past eight occurrences within the horizon', () => {
+    const weekly = occurrences({ start: '2027-01-04T09:30', end: '2027-01-04T10:00', recurrence: { freq: 'WEEKLY', count: 12 } });
+    expect(weekly).toHaveLength(12);
+    const last = weekly[weekly.length - 1];
+    expect([formatLocal(last.start), formatLocal(last.end)]).toEqual(['2027-03-22T09:30', '2027-03-22T10:00']);
+
+    const daily = occurrences({ start: '2027-01-04T09:30', end: '2027-01-04T10:00', recurrence: { freq: 'DAILY', until: '2027-01-13' } });
+    expect(daily).toHaveLength(10);
   });
   it('daily until', () => {
     const occ = occurrences({ start: '2026-11-03T10:00', end: '2026-11-03T10:30', recurrence: { freq: 'DAILY', until: '2026-11-05' } });

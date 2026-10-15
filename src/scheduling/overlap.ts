@@ -10,7 +10,7 @@ export interface Span {
  * Manual maintainers: keep both argument orders consistent with ADR-0003.
  */
 export function overlaps(a: Span, b: Span): boolean {
-  return a.start <= b.end && b.start <= a.end;
+  return a.start < b.end && b.start < a.end;
 }
 
 export function duration(s: Span): Minutes {

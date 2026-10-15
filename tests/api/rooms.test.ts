@@ -44,12 +44,14 @@ describe('availability', () => {
   it('shows recurring meetings', async () => {
     const res = await availability(app, 'rm-fuji', '2026-07-14');
     expect(res.body.busy.map((b: any) => b.title)).toContain('Platform standup');
+    const laterRes = await availability(app, 'rm-fuji', '2026-10-20');
+    expect(laterRes.body.busy.map((b: any) => b.title)).toContain('Platform standup');
   });
 
   it('shows bookings made under a renamed room id', async () => {
     const res = await availability(app, 'rm-olympus', '2026-09-03');
     expect(res.body.busy.map((b: any) => b.title)).toContain('Design review');
-    const everestRes = await availability(app, 'rm-everest', '2026-03-09');
+    const everestRes = await availability(app, 'rm-everest', '2026-11-02');
     expect(everestRes.body.busy.map((b: any) => b.title)).toContain('Monday all-hands');
   });
 
