@@ -31,8 +31,10 @@ export class BookingsController {
 
   /** GET /api/bookings?roomId=&from=YYYY-MM-DD&to=YYYY-MM-DD */
   list = async (req: Request, res: Response) => {
-    const { roomId, from, to } = req.query as Record<string, string | undefined>;
-    if (!roomId || !from || !to) throw new ValidationError('roomId, from and to are required');
+    const { roomId, from, to } = req.query;
+    if (typeof roomId !== 'string' || !roomId || typeof from !== 'string' || !from || typeof to !== 'string' || !to) {
+      throw new ValidationError('roomId, from and to are required');
+    }
     res.json({ roomId, occurrences: await this.query.between(roomId, from, to) });
   };
 }

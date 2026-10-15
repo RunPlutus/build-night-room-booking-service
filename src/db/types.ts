@@ -9,6 +9,8 @@ export interface RoomRecord {
   status: 'active' | 'retired';
   /** For retired rooms that were renamed/replaced: the room that took over its bookings. */
   replacedBy?: string;
+  /** Containing space: whole-room bookings overlap this room and vice versa. */
+  parentId?: string;
   createdAt: string;
 }
 
@@ -31,6 +33,8 @@ export interface BookingRecord {
 export interface Tables {
   rooms: Map<string, RoomRecord>;
   bookings: Map<string, BookingRecord>;
+  /** Freshness authority for all calendar dates of each canonical room view. */
+  bookingRevisions: Map<string, number>;
 }
 
 export interface Seed {

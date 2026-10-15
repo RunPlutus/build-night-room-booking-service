@@ -5,6 +5,7 @@
  *   npm run validate:data
  */
 import { loadSeed } from '../src/db';
+import { validateRoomSpaces } from '../src/repositories/RoomRepository';
 
 const { rooms, bookings } = loadSeed();
 let errors = 0;
@@ -18,6 +19,13 @@ for (const r of rooms) {
   ids.add(r.id);
   if (r.status === 'retired' && !r.replacedBy) warn(`retired room ${r.id} has no replacedBy`);
   if (r.replacedBy && !rooms.some((x) => x.id === r.replacedBy)) err(`${r.id}.replacedBy points at missing room ${r.replacedBy}`);
+}
+
+const byId = new Map(rooms.map((r) => [r.id, r]));
+try {
+  validateRoomSpaces(byId);
+} catch (error) {
+  err(error instanceof Error ? error.message : String(error));
 }
 
 const active = rooms.filter((r) => r.status === 'active');

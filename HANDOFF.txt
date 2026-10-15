@@ -1,0 +1,35 @@
+Status
+Complete for Facilities Ticket 1 and TICKET-2.md in the supplied shared-Database service.
+Final submission branch: sandeepkv93-solution-final.
+Official follow-up commit: 426db2bdfd666cf27fede3b313ad8eefbf3343bf.
+
+Completed changes
+- Fixed all five original complaints: half-open adjacency, complete bounded recurrence, atomic cross-replica confirmations, cancelled-view/cache freshness, and 4B-to-Everest identity with history preserved.
+- Added Summit divider behavior: whole blocks either half, either half blocks whole, sibling halves book concurrently. Conflict, availability, and occurrence-list paths share the same pairwise space relation.
+- Atomically update every affected canonical view revision while retaining useful independent sibling cache hits. Preserve idempotent cancellation, recurrence, aliases, and transaction rollback.
+- Merged the official ticket, calendar, scenarios and both exact 14-seat half records; existing room values and all 920 booking records remain intact.
+- Added 48 Ticket 2 regressions to the previously passing 172 tests, including graph validation, both directions of recurrence conflicts, deterministic races, cache fill interleavings, and cancellation rollback.
+- Restored CLAUDE.md and AGENTS.md byte-for-byte from the latest fetched origin/main as the last file changes.
+- Submission excludes private planning/progress artifacts from both the tree and published ancestry. Original local working branch is preserved.
+- AI assistance: Codex implemented the approved plan with bounded executor lanes, independent adversarial testing and principal review; the user supplied an Antigravity diagnosis for cross-checking.
+
+Verification
+Runtime: Node 20.20.2.
+npm ci: exit 0; package manifest and lockfile unchanged.
+npm run typecheck: exit 0.
+npm test: exit 0; 220 passed, 0 failed, 0 skipped, across 17 files.
+npm run replay: exit 0; 30 passed, 0 failed, 0 skipped (24 original plus 6 official divider checks).
+npm run validate:data: exit 0; 0 errors, 0 warnings.
+Aggregate ordinary-suite and complaint-replay totals: 250 passed, 0 failed, 0 skipped.
+Principal source review: approved, zero open findings; independent reviewer reran 59 focused tests under Node 20.20.2.
+Independent Ticket 2 adversarial verification: 9 tests pass; legacy-overlap mutation causes 8 expected failures, restored before final verification.
+Actual Chromium demo: all 6 official divider steps pass, nested rows render, simultaneous A/B bookings are not marked as clashes.
+Historical seed, policy, original tests, official ticket/client/scenarios, and exact new room records verified preserved.
+Regression evidence is in the committed tests; rerun the commands above to reproduce it.
+Demo: npm run demo; http://localhost:4000; choose Summit divider (ticket 2).
+
+Remaining
+- No known failures remain in the visible Ticket 1/2 acceptance checks.
+- A real SQL adapter and separate-process production deployment are not implemented or verified; the supplied shared-Database model is verified.
+- Unchanged dependencies have 11 existing audit advisories (6 moderate, 3 high, 2 critical); no unrelated dependency upgrade was performed.
+- Historical confirmed collisions remain for Facilities adjudication; no history was silently cancelled or deleted.

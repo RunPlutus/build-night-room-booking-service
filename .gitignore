@@ -3,3 +3,10 @@ dist
 coverage
 .env
 *.log
+
+# Private local planning and agent artifacts
+.codex/
+/SOLUTION_PLAN.*
+/solution_plan.*
+/PROGRESS.md
+/progress.md

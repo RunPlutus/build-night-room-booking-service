@@ -26,13 +26,15 @@ function checked(y: number, mo: number, d: number, h = 0, mi = 0): Minutes {
 }
 
 export function parseLocal(value: string): Minutes {
-  const m = LOCAL.exec(value ?? '');
+  if (typeof value !== 'string') throw new ValidationError('expected a YYYY-MM-DDTHH:MM string');
+  const m = LOCAL.exec(value);
   if (!m) throw new ValidationError(`expected YYYY-MM-DDTHH:MM, got "${value}"`);
   return checked(+m[1], +m[2], +m[3], +m[4], +m[5]);
 }
 
 export function parseDate(value: string): Minutes {
-  const m = DATE.exec(value ?? '');
+  if (typeof value !== 'string') throw new ValidationError('expected a YYYY-MM-DD string');
+  const m = DATE.exec(value);
   if (!m) throw new ValidationError(`expected YYYY-MM-DD, got "${value}"`);
   return checked(+m[1], +m[2], +m[3]);
 }

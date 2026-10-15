@@ -4,7 +4,7 @@ import { AvailabilityCache, CachedDay } from '../cache/AvailabilityCache';
 import { occurrences } from '../scheduling/recurrence';
 import { overlaps, sortSpans } from '../scheduling/overlap';
 import { formatLocal, MINUTES_PER_DAY, parseDate } from '../scheduling/time';
-import { NotFoundError } from '../errors';
+import { NotFoundError, ValidationError } from '../errors';
 import { metrics } from '../metrics/registry';
 
 export class AvailabilityService {
@@ -16,23 +16,26 @@ export class AvailabilityService {
 
   /** Busy periods for a room on one office-local date. */
   async forDay(roomId: string, date: string): Promise<CachedDay> {
+    if (typeof date !== 'string') throw new ValidationError('date must be YYYY-MM-DD');
+    const dayStart = parseDate(date);
     const room = await this.rooms.get(roomId);
     if (!room) throw new NotFoundError(`Room ${roomId}`);
     const canonical = await this.rooms.canonicalId(roomId);
-    const hit = this.cache.get(canonical, date);
+    const revision = await this.bookings.revision(canonical);
+    const hit = this.cache.get(canonical, date, revision);
     if (hit) {
       metrics.increment('availability_cache_hit');
       return { ...hit, roomId };
     }
     metrics.increment('availability_cache_miss');
 
-    const dayStart = parseDate(date);
     const day = { start: dayStart, end: dayStart + MINUTES_PER_DAY };
-    const ids = await this.rooms.physicalRoomIds(canonical);
-    const all = await this.bookings.findByRooms(ids);
+    const ids = await this.rooms.overlappingRoomIds(canonical);
+    const snapshot = await this.bookings.snapshotByRooms(ids, canonical);
 
     const busy = [];
-    for (const b of all) {
+    for (const b of snapshot.bookings) {
+      if (b.status !== 'confirmed') continue;
       for (const o of occurrences(b)) {
         if (o.start < day.end && o.end > day.start) busy.push({ ...o, bookingId: b.id, title: b.title });
       }
@@ -42,7 +45,7 @@ export class AvailabilityService {
       date,
       busy: sortSpans(busy).map((s) => ({ bookingId: s.bookingId, title: s.title, start: formatLocal(s.start), end: formatLocal(s.end) })),
     };
-    this.cache.set(value);
+    this.cache.set(value, snapshot.revision);
     return { ...value, roomId };
   }
 

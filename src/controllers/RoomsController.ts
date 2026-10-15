@@ -20,8 +20,8 @@ export class RoomsController {
 
   /** GET /api/rooms/:id/availability?date=YYYY-MM-DD */
   availability = async (req: Request, res: Response) => {
-    const date = String(req.query.date ?? '');
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new ValidationError('date must be YYYY-MM-DD');
+    const date = req.query.date;
+    if (typeof date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new ValidationError('date must be YYYY-MM-DD');
     res.json(await this.availabilitySvc.forDay(req.params.id, date));
   };
 }

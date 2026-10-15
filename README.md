@@ -143,6 +143,7 @@ The following sections describe the service's API, booking policy, architecture 
 6. **Cancelled** bookings don't block anything and don't show in availability.
 7. **Renamed rooms**: the old record is kept with `status: "retired"` and `replacedBy` pointing at the new room, so old bookings still count (ADR-0004). Retired rooms can't be booked directly.
 8. Production runs several replicas against one database. Correctness must not depend on which replica handles a request.
+9. **Divided rooms** (TICKET-2): a whole-room booking blocks each half and a half blocks the whole. Sibling halves can be booked concurrently. Calendar reads show bookings in overlapping spaces, and completed changes refresh every affected view across servers.
 
 ### How it works
 
@@ -156,7 +157,8 @@ routes -> controllers
 - `src/db/Database.ts` is the embedded store used in dev and tests (Cloud SQL in prod). Async, with realistic latency, and `transaction()` for serializable work.
 - `src/scheduling/*` holds time parsing, overlap and recurrence expansion. Its exported `overlaps`, `occurrences`, `stepMinutes`, `seriesLimit`, and `lastOccurrenceStart` functions are a supported shared interface. Calendar clients and the API must agree on their results. `npm run replay` checks the shared functions directly as well as the HTTP API.
 - Rooms and seed bookings live in `data/rooms.json` and `data/bookings.json`.
-- The 4B -> Everest rename (FAC-88) is complete; its bookings were migrated in FAC-91.
+- The 4B -> Everest rename retains the retired 4B record with a replacement link to Everest. Historical bookings keep their original room IDs and count toward Everest occupancy (ADR-0004).
+- The supplied store is embedded. Several app instances can share an injected database, as the demo does. A real multi-process deployment still needs a SQL adapter implementing the same transactional writes and authoritative calendar revisions; the deployment manifest alone does not provide one.
 
 ### Repo layout
 

@@ -1,6 +1,6 @@
 import { ValidationError } from '../errors';
-import { parseLocal, parseDate, MINUTES_PER_DAY } from '../scheduling/time';
-import { Recurrence, stepMinutes } from '../scheduling/recurrence';
+import { parseLocal, MINUTES_PER_DAY } from '../scheduling/time';
+import { lastOccurrenceStart, Recurrence } from '../scheduling/recurrence';
 import { Policies } from '../config/policies';
 
 export interface BookingInput {
@@ -13,7 +13,7 @@ export interface BookingInput {
 }
 
 export function validateBookingInput(body: any, policies: Policies): BookingInput {
-  if (!body || typeof body !== 'object') throw new ValidationError('body must be a JSON object');
+  if (!body || typeof body !== 'object' || Array.isArray(body)) throw new ValidationError('body must be a JSON object');
   const { roomId, title, organizer, start, end, recurrence } = body;
   if (typeof roomId !== 'string' || !roomId) throw new ValidationError('roomId is required');
   if (typeof title !== 'string' || !title.trim()) throw new ValidationError('title is required');
@@ -31,17 +31,9 @@ export function validateBookingInput(body: any, policies: Policies): BookingInpu
 
   let rec: Recurrence | null = null;
   if (recurrence != null) {
-    if (recurrence.freq !== 'DAILY' && recurrence.freq !== 'WEEKLY') throw new ValidationError('recurrence.freq must be DAILY or WEEKLY');
-    if (recurrence.interval != null && (!Number.isInteger(recurrence.interval) || recurrence.interval < 1)) {
-      throw new ValidationError('recurrence.interval must be a positive integer');
-    }
-    if (recurrence.until == null && recurrence.count == null) throw new ValidationError('recurrence needs until or count');
+    if (typeof recurrence !== 'object' || Array.isArray(recurrence)) throw new ValidationError('recurrence must be an object');
     if (e - s > MINUTES_PER_DAY) throw new ValidationError('recurring bookings must be shorter than a day');
-    const span =
-      recurrence.until != null
-        ? parseDate(recurrence.until) - s
-        : (Number(recurrence.count) - 1) * stepMinutes(recurrence as Recurrence);
-    if (span < 0) throw new ValidationError('recurrence ends before it starts');
+    const span = lastOccurrenceStart({ start, end, recurrence }) - s;
     if (span > policies.maxSeriesDays * MINUTES_PER_DAY) {
       throw new ValidationError(`recurring series may span at most ${policies.maxSeriesDays} days`);
     }
