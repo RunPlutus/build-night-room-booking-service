@@ -30,3 +30,14 @@ Times below are explicit UTC observations or converted Git commit timestamps. Ea
 - State: recording console and isolated Playwright browser prepared. No finished video is claimed yet. The console will be updated to the final follow-up counts before recording.
 - Commit/push: demo media and tooling are intentionally outside the candidate repository; their current local paths are recorded here.
 - Remaining: capture live footage, encode MP4, verify playback/duration, and deliver the actual file. No unknown recording software or security setting changes were made.
+
+## Authorized push — verified on personal fork
+
+- Timestamp: 2026-10-15 02:18:09 UTC (current-time observation after remote verification).
+- Saved follow-up commit: `88e34bd7577186cf2580ad6acf4524f5f52470cd` (all initial and follow-up code, 71 added regressions, handoff and milestone records).
+- Original destination: `RunPlutus/build-night-room-booking-service` rejected `Xuefeng-Zhu` with HTTP 403. The user explicitly chose creation and use of a personal fork.
+- Confirmed fork: `https://github.com/Xuefeng-Zhu/build-night-room-booking-service`; GitHub API confirmed its parent is RunPlutus and the authenticated owner has push permission.
+- Push: `git push -u origin candidate/xuefeng-verified-fix` exited 0. `git ls-remote origin refs/heads/candidate/xuefeng-verified-fix` returned exactly `88e34bd7577186cf2580ad6acf4524f5f52470cd`, matching local HEAD. Working tree clean at this checkpoint.
+- Remotes: origin is the personal fork; upstream is the original RunPlutus repository. No force-push, main-branch push, PR, organizer submission, or deployment.
+- Checks remain: 137/137 tests, 30/30 replay, clean typecheck and data validation. This receipt is a documentation-only follow-up to the verified source commit.
+- Remaining: finish the local demo video and save its delivery/verification milestone.
